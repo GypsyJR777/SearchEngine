@@ -3,13 +3,13 @@ package models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "page")
+@Table(name = "page", indexes = @Index(name = "pathPage", columnList = "path"))
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "path", nullable = false)
+    @Column(name = "path", nullable = false, unique = true)
     private String path;
 
     @Column(name = "code", nullable = false)

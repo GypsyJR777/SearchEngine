@@ -1,3 +1,6 @@
+import models.Page;
+
+import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 
 public class Main {
@@ -5,11 +8,12 @@ public class Main {
     private static final int NUMBER_OF_THREADS = 5;
 
     public static void main(String[] args) {
-        WebMapParse webMapParse = new WebMapParse(START_PAGE);
+        WebMapParse webMapParse = new WebMapParse();
 
         ForkJoinPool forkJoinPool = new ForkJoinPool(NUMBER_OF_THREADS);
-        Integer websCount = forkJoinPool.invoke(webMapParse);
+        Integer pages = forkJoinPool.invoke(webMapParse);
+        DBConnection dbConnection = DBConnection.getInstance();
 
-        WebMapParse.closeSession();
+        dbConnection.closeConnection();
     }
 }

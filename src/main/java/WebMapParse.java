@@ -31,6 +31,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
     public WebMapParse() {
         startPage = "http://www.playback.ru";
         children = new ArrayList<>();
+        websites.add(startPage);
         pageCount = 0;
 
         if (mainPage.equals("")) {

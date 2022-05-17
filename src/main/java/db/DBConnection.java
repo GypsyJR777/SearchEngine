@@ -1,3 +1,5 @@
+package db;
+
 import models.Page;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -8,7 +10,6 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
 
 import java.io.File;
-import java.util.Set;
 
 public class DBConnection {
     private final StandardServiceRegistry registry;

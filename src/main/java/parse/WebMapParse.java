@@ -1,3 +1,6 @@
+package parse;
+
+import db.DBConnection;
 import models.Page;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -61,9 +64,9 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
             Connection.Response response = connection.execute();
 
-            if (websites.size() == 1) {
-                document = Jsoup.connect(startPage).get();
-            }
+//            if (websites.size() == 1) {
+//                document = Jsoup.connect(startPage).get();
+//            }
 
             synchronized (pageId) {
                 pageId.getAndIncrement();

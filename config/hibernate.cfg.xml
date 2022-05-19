@@ -21,5 +21,8 @@
         <property name="connection.autocommit">false</property>
 
         <mapping class="models.Page"/>
+        <mapping class="models.Lemma"/>
+        <mapping class="models.Field"/>
+        <mapping class="models.IndexTable"/>
     </session-factory>
 </hibernate-configuration>

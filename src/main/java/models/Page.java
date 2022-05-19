@@ -1,5 +1,6 @@
 package models;
 
+
 import jakarta.persistence.*;
 
 @Entity
@@ -13,10 +14,10 @@ public class Page {
     private String path;
 
     @Column(name = "code", nullable = false)
-    int code;
+    private int code;
 
     @Column(name = "content", nullable = false, columnDefinition = "MEDIUMTEXT")
-    String content;
+    private String content;
 
     public Page() {
     }

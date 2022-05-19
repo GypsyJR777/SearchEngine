@@ -7,7 +7,6 @@ import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Lemmatizer {
     private final List<String> WRONG_TYPES = new ArrayList<>();
@@ -35,6 +34,12 @@ public class Lemmatizer {
     }
 
     private boolean checkForm(String word) {
+        String russianAlphabet = "[а-яА-Я]+";
+
+        if (!word.matches(russianAlphabet)){
+            return false;
+        }
+
         List<String> wordBaseForm = russianMorph.getMorphInfo(word);
 
         for (String type : WRONG_TYPES) {

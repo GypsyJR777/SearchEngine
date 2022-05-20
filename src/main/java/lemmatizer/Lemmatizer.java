@@ -31,12 +31,14 @@ public class Lemmatizer {
         WRONG_TYPES.add("МЕЖД");
         WRONG_TYPES.add("ВВОДН");
         WRONG_TYPES.add("ЧАСТ");
+        WRONG_TYPES.add("CONJ");
+        WRONG_TYPES.add("PART");
     }
 
-    private boolean checkForm(String word) {
+    private boolean checkRussianForm(String word) {
         String russianAlphabet = "[а-яА-Я]+";
 
-        if (!word.matches(russianAlphabet)){
+        if (!word.matches(russianAlphabet)) {
             return false;
         }
 
@@ -51,13 +53,57 @@ public class Lemmatizer {
         return true;
     }
 
-    private void addNewWord(String word) {
-        wordsBaseForms.put(word, russianMorph.getNormalForms(word));
+    private boolean checkEnglishForm(String word) {
 
-        if (wordsCount.containsKey(word)) {
-            wordsCount.replace(word, wordsCount.get(word) + 1);
+        List<String> wordBaseForm = englishMorph.getMorphInfo(word);
+
+        for (String type : WRONG_TYPES) {
+            if (wordBaseForm.toString().contains(type)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private String checkLanguage(String word) {
+        String russianAlphabet = "[а-яА-Я]+";
+        String englishAlphabet = "[a-zA-z]+";
+
+        if (word.matches(russianAlphabet)) {
+            return "Russian";
+        } else if (word.matches(englishAlphabet)) {
+            return "English";
         } else {
-            wordsCount.put(word, 1);
+            return "";
+        }
+    }
+
+    private void addNewWord(String word) {
+        if (checkLanguage(word).equals("Russian")) {
+            if (!checkRussianForm(word)) {
+                return;
+            }
+
+            wordsBaseForms.put(word, russianMorph.getNormalForms(word));
+
+            if (wordsCount.containsKey(word)) {
+                wordsCount.replace(word, wordsCount.get(word) + 1);
+            } else {
+                wordsCount.put(word, 1);
+            }
+        } else if (checkLanguage(word).equals("English")) {
+            if (!checkEnglishForm(word)) {
+                return;
+            }
+
+            wordsBaseForms.put(word, englishMorph.getNormalForms(word));
+
+            if (wordsCount.containsKey(word)) {
+                wordsCount.replace(word, wordsCount.get(word) + 1);
+            } else {
+                wordsCount.put(word, 1);
+            }
         }
     }
 
@@ -77,17 +123,18 @@ public class Lemmatizer {
         String regex = "[.,!?\\-:;()'\"]?";
         sentence = sentence.replaceAll(regex, "");
         String[] words = sentence.toLowerCase().split(" ");
-        Arrays.stream(words).distinct().forEach(it -> {
-            if (checkForm(it)) {
-                addNewWord(it);
-            }
-        });
+        Arrays.stream(words).distinct().forEach(this::addNewWord);
     }
 
     public void printMorphInfo() {
         wordsCount.forEach((key, value) -> {
             System.out.println(key + ": " + value);
-            System.out.println(russianMorph.getMorphInfo(key));
+
+//            if (checkLanguage(key).equals("Russian")) {
+//                System.out.println(russianMorph.getMorphInfo(key));
+//            } else if (checkLanguage(key).equals("English")) {
+//                System.out.println(englishMorph.getMorphInfo(key));
+//            }
         });
     }
 }

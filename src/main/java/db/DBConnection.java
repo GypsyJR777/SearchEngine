@@ -2,8 +2,6 @@ package db;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import models.Field;
-import models.Page;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
@@ -43,7 +41,7 @@ public class DBConnection {
         return instance;
     }
 
-    public void addPage(Page page) {
+    public<T> void addClass(T type) {
         if (session.getTransaction().getStatus() != TransactionStatus.ACTIVE){
             session.beginTransaction();
         }
@@ -51,7 +49,7 @@ public class DBConnection {
             session.beginTransaction();
         }
 
-        session.persist(page);
+        session.persist(type);
         session.getTransaction().commit();
     }
 

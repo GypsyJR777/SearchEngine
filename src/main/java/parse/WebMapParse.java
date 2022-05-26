@@ -7,13 +7,10 @@ import models.Page;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,7 +21,10 @@ public class WebMapParse extends RecursiveTask<Integer> {
         pageId = new AtomicInteger(0);
         dbConnection = DBConnection.getInstance();
         lemmatizer = Lemmatizer.getInstance();
-        fields = WebMapParse.dbConnection.getAllData(Field.class);
+        fields = new HashMap<>();
+        WebMapParse.dbConnection.getAllData(Field.class).forEach(it -> {
+            WebMapParse.fields.put(it.getName(), it.getWeight());
+        });
     }
 
     private static final Set<String> websites;
@@ -32,7 +32,8 @@ public class WebMapParse extends RecursiveTask<Integer> {
     private final static AtomicInteger pageId;
     private static String mainPage = "";
     private final static Lemmatizer lemmatizer;
-    private final static List<Field> fields;
+//    private final static List<Field> fields;
+    private final static Map<String, Float> fields;
 
     private Integer pageCount;
     private final List<WebMapParse> children;
@@ -121,18 +122,18 @@ public class WebMapParse extends RecursiveTask<Integer> {
         page.setPath(startPage);
         page.setContent(document.html());
 
-        dbConnection.addPage(page);
+        dbConnection.addClass(page);
 
         pageCount++;
     }
 
     private void addLemmas(Document document) {
-        fields.forEach(field -> {
-            Elements el = document.select(field.getName());
-            lemmatizer.addString(el.text());
+        fields.forEach((key, value) -> {
+            Elements el = document.select(key);
+            lemmatizer.addString(el.text(), value);
         });
 
-        lemmatizer.printMorphInfo();
+//        lemmatizer.printMorphInfo();
 
 //        Elements el = document.select("title");
 //

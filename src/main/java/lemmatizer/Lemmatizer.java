@@ -1,9 +1,12 @@
 package lemmatizer;
 
 import db.DBConnection;
+import models.Field;
+import models.Lemma;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
+import parse.WebMapParse;
 
 import java.io.IOException;
 import java.util.*;
@@ -31,6 +34,7 @@ public class Lemmatizer {
         WRONG_TYPES.add("МЕЖД");
         WRONG_TYPES.add("ВВОДН");
         WRONG_TYPES.add("ЧАСТ");
+        WRONG_TYPES.add("МС");
         WRONG_TYPES.add("CONJ");
         WRONG_TYPES.add("PART");
     }
@@ -79,32 +83,33 @@ public class Lemmatizer {
         }
     }
 
-    private void addNewWord(String word) {
+    private void addNewWord(String word, float frequency) {
         if (checkLanguage(word).equals("Russian")) {
             if (!checkRussianForm(word)) {
                 return;
             }
 
-            wordsBaseForms.put(word, russianMorph.getNormalForms(word));
-
-            if (wordsCount.containsKey(word)) {
-                wordsCount.replace(word, wordsCount.get(word) + 1);
-            } else {
-                wordsCount.put(word, 1);
-            }
+            addNormalForms(word, frequency, russianMorph);
         } else if (checkLanguage(word).equals("English")) {
             if (!checkEnglishForm(word)) {
                 return;
             }
 
-            wordsBaseForms.put(word, englishMorph.getNormalForms(word));
-
-            if (wordsCount.containsKey(word)) {
-                wordsCount.replace(word, wordsCount.get(word) + 1);
-            } else {
-                wordsCount.put(word, 1);
-            }
+            addNormalForms(word, frequency, englishMorph);
         }
+    }
+
+    private void addNormalForms(String word, float frequency, LuceneMorphology wordMorph) {
+        wordsBaseForms.put(word, wordMorph.getNormalForms(word));
+        List<String> normalWords = wordMorph.getNormalForms(word);
+
+        normalWords.forEach(it -> {
+            if (wordsCount.containsKey(it)) {
+                wordsCount.replace(it, wordsCount.get(it) + 1);
+            } else {
+                wordsCount.put(it, 1);
+            }
+        });
     }
 
     public static Lemmatizer getInstance() {
@@ -119,22 +124,34 @@ public class Lemmatizer {
         return instance;
     }
 
-    public void addString(String sentence) {
+    public void addString(String sentence, float frequency) {
         String regex = "[.,!?\\-:;()'\"]?";
         sentence = sentence.replaceAll(regex, "");
         String[] words = sentence.toLowerCase().split(" ");
-        Arrays.stream(words).distinct().forEach(this::addNewWord);
+        Arrays.stream(words).distinct().forEach(it -> {
+            addNewWord(it, frequency);
+        });
     }
 
     public void printMorphInfo() {
+//        wordsBaseForms.forEach((key, value) -> {
+//            System.out.println(key + ": " + value.toString());
+//        });
         wordsCount.forEach((key, value) -> {
             System.out.println(key + ": " + value);
-
-//            if (checkLanguage(key).equals("Russian")) {
-//                System.out.println(russianMorph.getMorphInfo(key));
-//            } else if (checkLanguage(key).equals("English")) {
-//                System.out.println(englishMorph.getMorphInfo(key));
-//            }
         });
+    }
+
+    public List<Lemma> getLemmas() {
+        List<Lemma> lemmas = new ArrayList<>();
+
+        wordsCount.forEach((key, value) -> {
+            Lemma lemma = new Lemma();
+            lemma.setLemma(key);
+            lemma.setFrequency(value);
+            lemmas.add(lemma);
+        });
+
+        return lemmas;
     }
 }

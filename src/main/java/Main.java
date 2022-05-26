@@ -15,6 +15,8 @@ public class Main {
         ForkJoinPool forkJoinPool = new ForkJoinPool(NUMBER_OF_THREADS);
         Integer pages = forkJoinPool.invoke(webMapParse);
         DBConnection dbConnection = DBConnection.getInstance();
+        Lemmatizer lemmatizer = Lemmatizer.getInstance();
+        lemmatizer.getLemmas().forEach(dbConnection::addClass);
 
         dbConnection.closeConnection();
 

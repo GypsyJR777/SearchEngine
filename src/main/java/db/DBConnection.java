@@ -11,6 +11,7 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
 
 import java.io.File;
+import java.sql.PreparedStatement;
 import java.util.List;
 
 public class DBConnection {
@@ -42,10 +43,7 @@ public class DBConnection {
     }
 
     public<T> void addClass(T type) {
-        if (session.getTransaction().getStatus() != TransactionStatus.ACTIVE){
-            session.beginTransaction();
-        }
-        if (!session.getTransaction().isActive()) {
+        if (session.getTransaction().getStatus() != TransactionStatus.ACTIVE || !session.getTransaction().isActive()) {
             session.beginTransaction();
         }
 
@@ -60,7 +58,13 @@ public class DBConnection {
         return session.createQuery(criteria).getResultList();
     }
 
-//    public
+    public <T> void updateData(T type) {
+        if (session.getTransaction().getStatus() != TransactionStatus.ACTIVE || !session.getTransaction().isActive()) {
+            session.beginTransaction();
+        }
+
+        session.merge(type);
+    }
 
     public void closeConnection() {
         session.close();

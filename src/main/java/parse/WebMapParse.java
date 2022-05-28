@@ -3,6 +3,8 @@ package parse;
 import db.DBConnection;
 import lemmatizer.Lemmatizer;
 import models.Field;
+import models.IndexTable;
+import models.Lemma;
 import models.Page;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class WebMapParse extends RecursiveTask<Integer> {
@@ -77,7 +80,6 @@ public class WebMapParse extends RecursiveTask<Integer> {
                 pageId.getAndIncrement();
 
                 addPage(response, document);
-                addLemmas(document);
 
                 Elements elements = document.select("a");
                 elements.forEach(element -> {
@@ -125,32 +127,31 @@ public class WebMapParse extends RecursiveTask<Integer> {
         dbConnection.addClass(page);
 
         pageCount++;
+
+        if (response.statusCode() < 400) {
+            addLemmas(document, page);
+        }
     }
 
-    private void addLemmas(Document document) {
+    private void addLemmas(Document document, Page page) {
+        AtomicBoolean newPage = new AtomicBoolean(true);
         fields.forEach((key, value) -> {
             Elements el = document.select(key);
-            lemmatizer.addString(el.text(), value);
+            lemmatizer.addString(el.text(), newPage.get(), value);
+            newPage.set(false);
         });
 
-//        lemmatizer.printMorphInfo();
+        addIndexTable(page);
+    }
 
-//        Elements el = document.select("title");
-//
-//        System.out.println(el.text());
-//
-//        el = document.select("title");
-//
-//        for (Element element: el) {
-//            Elements e = element.getAllElements();
-//            System.out.println(e.text());
-//            for (Element it : e) {
-//                if (it.hasAttr("title")) {
-//                    System.out.println(it.attr("title"));
-//                    System.out.println();
-//                    System.out.println();
-//                }
-//            }
-//        }
+    private void addIndexTable(Page page) {
+        lemmatizer.getLemmasWithRanks().forEach((lemma, rank) -> {
+            IndexTable indexTable = new IndexTable();
+            indexTable.setLemma(lemma);
+            indexTable.setPage(page);
+            indexTable.setLemmaRank(rank);
+
+            dbConnection.addClass(indexTable);
+        });
     }
 }

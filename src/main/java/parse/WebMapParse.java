@@ -4,7 +4,6 @@ import db.DBConnection;
 import lemmatizer.Lemmatizer;
 import models.Field;
 import models.IndexTable;
-import models.Lemma;
 import models.Page;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;

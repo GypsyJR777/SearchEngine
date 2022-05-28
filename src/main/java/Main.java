@@ -1,5 +1,4 @@
 import db.DBConnection;
-import lemmatizer.Lemmatizer;
 import parse.WebMapParse;
 
 import java.util.concurrent.ForkJoinPool;
@@ -16,11 +15,5 @@ public class Main {
         DBConnection dbConnection = DBConnection.getInstance();
 
         dbConnection.closeConnection();
-
-//        Lemmatizer lemmatizer = Lemmatizer.getInstance();
-//
-//        lemmatizer.addString("Описание и характеристики Смартфон Xiaomi Redmi Note 10S NFC 6/64 ГБ RU, серый оникс and yeah yes no if");
-//
-//        lemmatizer.printMorphInfo();
     }
 }

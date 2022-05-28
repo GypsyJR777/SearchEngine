@@ -11,7 +11,6 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
 
 import java.io.File;
-import java.sql.PreparedStatement;
 import java.util.List;
 
 public class DBConnection {

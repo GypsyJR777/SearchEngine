@@ -1,4 +1,4 @@
-package models;
+package ru.gypsyjr.models;
 
 import jakarta.persistence.*;
 

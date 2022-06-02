@@ -1,5 +1,7 @@
-import db.DBConnection;
-import parse.WebMapParse;
+package ru.gypsyjr;
+
+import ru.gypsyjr.db.DBConnection;
+import ru.gypsyjr.parse.WebMapParse;
 
 import java.util.concurrent.ForkJoinPool;
 
@@ -13,7 +15,7 @@ public class Main {
         ForkJoinPool forkJoinPool = new ForkJoinPool(NUMBER_OF_THREADS);
         Integer pages = forkJoinPool.invoke(webMapParse);
         DBConnection dbConnection = DBConnection.getInstance();
-
+//        dbConnection.test();
         dbConnection.closeConnection();
     }
 }

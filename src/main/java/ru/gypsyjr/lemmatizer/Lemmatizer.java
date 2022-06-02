@@ -1,7 +1,7 @@
-package lemmatizer;
+package ru.gypsyjr.lemmatizer;
 
-import db.DBConnection;
-import models.Lemma;
+import ru.gypsyjr.db.DBConnection;
+import ru.gypsyjr.models.Lemma;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
@@ -173,4 +173,10 @@ public class Lemmatizer {
     public Map<Lemma, Float> getLemmasWithRanks() {
         return wordsRanks;
     }
+
+
+    //for stage 5
+
+
+
 }

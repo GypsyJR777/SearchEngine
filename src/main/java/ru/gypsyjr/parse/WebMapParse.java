@@ -1,10 +1,10 @@
-package parse;
+package ru.gypsyjr.parse;
 
-import db.DBConnection;
-import lemmatizer.Lemmatizer;
-import models.Field;
-import models.IndexTable;
-import models.Page;
+import ru.gypsyjr.db.DBConnection;
+import ru.gypsyjr.lemmatizer.Lemmatizer;
+import ru.gypsyjr.models.Field;
+import ru.gypsyjr.models.IndexTable;
+import ru.gypsyjr.models.Page;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

@@ -1,6 +1,7 @@
 package ru.gypsyjr.lemmatizer;
 
 import ru.gypsyjr.db.DBConnection;
+import ru.gypsyjr.models.IndexTable;
 import ru.gypsyjr.models.Lemma;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
@@ -113,7 +114,7 @@ public class Lemmatizer {
                 wordsRanks.clear();
 
                 dbConnection.updateData(lemma);
-            } else if (isNew){
+            } else if (isNew) {
                 wordsRanks.clear();
                 lemma = new Lemma();
                 lemma.setFrequency(1);
@@ -122,7 +123,7 @@ public class Lemmatizer {
                 wordsRanks.put(lemma, rank);
 
                 dbConnection.addClass(lemma);
-            } else if (wordsCount.containsKey(it)){
+            } else if (wordsCount.containsKey(it)) {
                 lemma = wordsCount.get(it);
                 if (wordsRanks.containsKey(lemma)) {
                     wordsRanks.replace(lemma, wordsRanks.get(lemma) + rank);
@@ -154,6 +155,11 @@ public class Lemmatizer {
         });
     }
 
+    public void endAddMorphs() {
+        wordsRanks.clear();
+        wordsCount.clear();
+    }
+
     public void printMorphInfo() {
         wordsCount.forEach((key, value) -> {
             System.out.println(key + ": " + value);
@@ -176,7 +182,20 @@ public class Lemmatizer {
 
 
     //for stage 5
+    public List<?> searchLemmas(String word) {
+        List<?> indexes = new ArrayList<>();
+        if ((checkLanguage(word).equals("Russian") && checkRussianForm(word)) ||
+                (checkLanguage(word).equals("English") && checkEnglishForm(word))) {
+            Lemma lemma = dbConnection.getLemmaByParameter("lemma", word);
 
+            indexes = dbConnection.getSearchIndexesByLemma(lemma);
+        }
+        if ((indexes.size() / (float) dbConnection.getAllData(IndexTable.class).size()) < 0.2) {
+            return indexes;
+        }
+
+        return new ArrayList<>();
+    }
 
 
 }

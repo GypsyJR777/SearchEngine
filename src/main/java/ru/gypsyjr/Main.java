@@ -1,8 +1,12 @@
 package ru.gypsyjr;
 
 import ru.gypsyjr.db.DBConnection;
+import ru.gypsyjr.lemmatizer.Lemmatizer;
+import ru.gypsyjr.models.Lemma;
 import ru.gypsyjr.parse.WebMapParse;
+import ru.gypsyjr.search.SearchEngine;
 
+import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 public class Main {
@@ -12,9 +16,11 @@ public class Main {
     public static void main(String[] args) {
         WebMapParse webMapParse = new WebMapParse();
 
-        ForkJoinPool forkJoinPool = new ForkJoinPool(NUMBER_OF_THREADS);
-        Integer pages = forkJoinPool.invoke(webMapParse);
+//        ForkJoinPool forkJoinPool = new ForkJoinPool(NUMBER_OF_THREADS);
+//        Integer pages = forkJoinPool.invoke(webMapParse);
         DBConnection dbConnection = DBConnection.getInstance();
+        SearchEngine engine = new SearchEngine();
+        engine.addSearchQuery("купить смартфон oneplus 11");
 //        dbConnection.test();
         dbConnection.closeConnection();
     }

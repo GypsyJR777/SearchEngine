@@ -20,7 +20,7 @@ public class Main {
 //        Integer pages = forkJoinPool.invoke(webMapParse);
         DBConnection dbConnection = DBConnection.getInstance();
         SearchEngine engine = new SearchEngine();
-        engine.addSearchQuery("купить смартфон oneplus 11");
+        engine.addSearchQuery("купить смартфон Oneplus чехол");
 //        dbConnection.test();
         dbConnection.closeConnection();
     }

@@ -3,9 +3,11 @@ package ru.gypsyjr.models;
 
 import jakarta.persistence.*;
 
+import java.util.Comparator;
+
 @Entity
 @Table(name = "lemma")
-public class Lemma {
+public class Lemma implements Comparable<Lemma> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -39,4 +41,17 @@ public class Lemma {
     public void setFrequency(int frequency) {
         this.frequency = frequency;
     }
+
+
+    @Override
+    public int compareTo(Lemma o) {
+        if (frequency > o.getFrequency()) {
+            return 1;
+        } else if (frequency < o.getFrequency()) {
+            return -1;
+        }
+
+        return 0;
+    }
+
 }

@@ -3,7 +3,9 @@ package ru.gypsyjr.db;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import ru.gypsyjr.models.IndexTable;
 import ru.gypsyjr.models.Lemma;
+import ru.gypsyjr.models.Page;
 
 import java.util.List;
 
@@ -46,9 +48,20 @@ public class DBConnection {
         return entityManager.createQuery(criteria).getResultList();
     }
 
-    public Lemma getLemmaByParameter(String parameter, String field){
+    public Page getPageById(Integer id) {
+        List<?> pages = entityManager.createQuery("SELECT p FROM Page p WHERE id = :id")
+                .setParameter("id", id)
+                .getResultList();
+
+        if (pages.size() > 0 && pages.get(0).getClass() == Page.class){
+            return (Page) pages.get(0);
+        }
+
+        return null;
+    }
+
+    public Lemma getLemmaByName(String field){
         List<?> lemmas = entityManager.createQuery("SELECT l FROM Lemma l WHERE lemma = :field")
-//                .setParameter("parameter", parameter)
                 .setParameter("field", field)
                 .getResultList();
 
@@ -60,9 +73,24 @@ public class DBConnection {
     }
 
     public List<?> getSearchIndexesByLemma(Lemma id) {
-        return entityManager.createQuery("SELECT i FROM IndexTable AS i WHERE lemma = :lemma")
+        return entityManager.createQuery("SELECT page FROM IndexTable AS i WHERE lemma = :lemma")
                 .setParameter("lemma", id)
                 .getResultList();
+    }
+
+    public IndexTable getSearchIndexesByLemma(Lemma lemma, Page page) {
+
+        List<?> indexes = entityManager
+                .createQuery("SELECT i FROM IndexTable AS i WHERE lemma = :lemma AND page = :page")
+                .setParameter("lemma", lemma)
+                .setParameter("page", page)
+                .getResultList();
+
+        if (indexes.size() > 0 && indexes.get(0).getClass() == IndexTable.class){
+            return (IndexTable) indexes.get(0);
+        }
+
+        return null;
     }
 
     public <T> void updateData(T type) {

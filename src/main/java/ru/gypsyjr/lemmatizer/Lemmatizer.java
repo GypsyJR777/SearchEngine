@@ -182,19 +182,23 @@ public class Lemmatizer {
 
 
     //for stage 5
-    public List<?> searchLemmas(String word) {
-        List<?> indexes = new ArrayList<>();
+    public Lemma getLemma(String word) {
+
+
         if ((checkLanguage(word).equals("Russian") && checkRussianForm(word)) ||
                 (checkLanguage(word).equals("English") && checkEnglishForm(word))) {
-            Lemma lemma = dbConnection.getLemmaByParameter("lemma", word);
-
-            indexes = dbConnection.getSearchIndexesByLemma(lemma);
-        }
-        if ((indexes.size() / (float) dbConnection.getAllData(IndexTable.class).size()) < 0.2) {
-            return indexes;
+            return dbConnection.getLemmaByName(word);
         }
 
-        return new ArrayList<>();
+        return null;
+
+//        List<?> indexes = new ArrayList<>();
+//        indexes = dbConnection.getSearchIndexesByLemma(lemma);
+//        if ((indexes.size() / (float) dbConnection.getAllData(IndexTable.class).size()) < 0.2) {
+//            return indexes;
+//        }
+//
+//        return new ArrayList<>();
     }
 
 

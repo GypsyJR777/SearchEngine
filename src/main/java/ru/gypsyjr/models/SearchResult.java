@@ -26,7 +26,7 @@ public class SearchResult implements Comparable<SearchResult>{
         return snippet;
     }
 
-    public void setSnippet(String snippet, String word) {
+    public void setSnippet(String snippet) {
         this.snippet = snippet;
     }
 
@@ -44,5 +44,10 @@ public class SearchResult implements Comparable<SearchResult>{
             return -1;
         }
         return 1;
+    }
+
+    @Override
+    public String toString() {
+        return "title: " + title + "\nuri: " + uri + "\nsnippet:\n" + snippet + "\nrel: " + relevance;
     }
 }

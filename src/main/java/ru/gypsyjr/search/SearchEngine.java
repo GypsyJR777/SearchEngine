@@ -7,11 +7,13 @@ import ru.gypsyjr.lemmatizer.Lemmatizer;
 import ru.gypsyjr.models.*;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SearchEngine {
     private final DBConnection dbConnection;
+    private final Lemmatizer lemmatizer;
     private List<String> words;
-    private Lemmatizer lemmatizer;
 
     public SearchEngine() {
         words = new ArrayList<>();
@@ -20,8 +22,6 @@ public class SearchEngine {
     }
 
     public void addSearchQuery(String query) {
-        //TODO заменить цикл на 2, сначала находим леммы потом достаем индексы (отдельно нужны 2 функции в Lemmatizer)
-
         SortedSet<Lemma> lemmas = new TreeSet<>();
 
         for (String word : query.split(" ")) {
@@ -32,11 +32,10 @@ public class SearchEngine {
         }
 
         List<Page> pages = getPages(lemmas);
-
         List<IndexRanks> indexRanks = getIndexRanks(lemmas, pages);
-
         SortedSet<SearchResult> searchResults = getSearchResults(indexRanks, lemmas);
 
+//        searchResults.forEach(System.out::println);
     }
 
     private List<Page> getPages(SortedSet<Lemma> lemmas) {
@@ -64,6 +63,7 @@ public class SearchEngine {
                     pages.remove(count);
                 } else {
                     IndexRanks indexRank = new IndexRanks();
+
                     indexRank.setPage(pages.get(count));
                     indexRank.setRanks(lemma.getLemma(), indexTable.getLemmaRank());
                     indexRank.setRAbs();
@@ -85,13 +85,32 @@ public class SearchEngine {
             SearchResult sResult = new SearchResult();
             Document document = Jsoup.parse(it.getPage().getContent());
 
+            AtomicReference<String> snippet = new AtomicReference<>("");
+            AtomicInteger maxSnippet = new AtomicInteger();
+
+            document.select("div").forEach(i -> {
+                String str = i.text().toLowerCase();
+                int count = 0;
+                for(Lemma lem: lemmas.stream().toList()){
+                    String l = lem.getLemma();
+                    if (str.contains(l)){
+                        count++;
+                        str = str.replaceAll("(?i)" + l,
+                                "<b>" + l + "</b>");
+                    }
+                }
+
+                if (count > maxSnippet.get()) {
+                    snippet.set(str);
+                    maxSnippet.set(count);
+                }
+            });
             sResult.setTitle(document.title());
-//            System.out.println(document.body().html().replaceAll(lemmas.first().getLemma(),
-//                    "<b>" + lemmas.first().getLemma() + "</b>"));
-            System.out.println(document.select("body"));
+            sResult.setRelevance(it.getRRel());
+            sResult.setSnippet(snippet.get());
+            sResult.setUri(it.getPage().getPath());
 
             searchResults.add(sResult);
-
         });
 
         return searchResults;

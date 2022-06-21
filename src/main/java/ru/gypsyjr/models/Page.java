@@ -19,6 +19,10 @@ public class Page {
     @Column(name = "content", nullable = false, columnDefinition = "MEDIUMTEXT")
     private String content;
 
+    @OneToOne
+    @JoinColumn(name = "site_id")
+    private Site site;
+
     public Page() {
     }
 
@@ -52,5 +56,13 @@ public class Page {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public Site getSite() {
+        return site;
+    }
+
+    public void setSite(Site site) {
+        this.site = site;
     }
 }

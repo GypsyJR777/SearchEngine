@@ -18,6 +18,10 @@ public class Lemma implements Comparable<Lemma> {
     @Column(name = "frequency", nullable = false)
     private int frequency;
 
+    @ManyToOne
+    @JoinColumn(name = "site_id")
+    private Site site;
+
     public int getId() {
         return id;
     }
@@ -42,6 +46,13 @@ public class Lemma implements Comparable<Lemma> {
         this.frequency = frequency;
     }
 
+    public Site getSite() {
+        return site;
+    }
+
+    public void setSite(Site site) {
+        this.site = site;
+    }
 
     @Override
     public int compareTo(Lemma o) {

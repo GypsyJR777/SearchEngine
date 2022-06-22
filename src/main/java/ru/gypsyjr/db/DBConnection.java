@@ -1,8 +1,9 @@
 package ru.gypsyjr.db;
 
-import jakarta.persistence.*;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
+import javax.persistence.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+
 import ru.gypsyjr.models.IndexTable;
 import ru.gypsyjr.models.Lemma;
 import ru.gypsyjr.models.Page;

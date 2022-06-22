@@ -2,6 +2,7 @@ package ru.gypsyjr.search;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Autowired;
 import ru.gypsyjr.db.DBConnection;
 import ru.gypsyjr.lemmatizer.Lemmatizer;
 import ru.gypsyjr.models.*;

@@ -1,7 +1,7 @@
 package ru.gypsyjr.models;
 
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "page", indexes = @Index(name = "pathPage", columnList = "path"))

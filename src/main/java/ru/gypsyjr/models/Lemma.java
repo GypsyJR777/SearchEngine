@@ -1,9 +1,7 @@
 package ru.gypsyjr.models;
 
 
-import jakarta.persistence.*;
-
-import java.util.Comparator;
+import javax.persistence.*;
 
 @Entity
 @Table(name = "lemma")

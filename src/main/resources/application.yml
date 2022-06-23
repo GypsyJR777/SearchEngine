@@ -7,18 +7,18 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     database-platform: org.hibernate.dialect.MySQLDialect
 
 #server:
 #  servlet:
 #    context-path: /admin
-
-sites:
-  - url: http://www.playback.ru
-    name: Плейбек.ру
-  - url: https://www.skillbox.ru
-    name: Skillbox
-
-user_agent: Mozilla/5.0 (Windows NT 6.1; rv:98.0) Gecko/20100101 Firefox/98.0
-referrer: http://google.com
+conf:
+  sitesUrl:
+    - http://www.playback.ru
+    - https://www.skillbox.ru
+  sitesName:
+    - Плейбек.ру
+    - Skillbox
+  userAgent: Mozilla/5.0 (Windows NT 6.1; rv:98.0) Gecko/20100101 Firefox/98.0
+  referrer: http://google.com

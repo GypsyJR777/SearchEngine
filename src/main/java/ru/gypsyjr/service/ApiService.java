@@ -1,10 +1,13 @@
 package ru.gypsyjr.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import ru.gypsyjr.main.Config;
+import ru.gypsyjr.models.Site;
 import ru.gypsyjr.models.Statistic;
 import ru.gypsyjr.models.Total;
 import ru.gypsyjr.repository.*;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ApiService implements IService {
@@ -18,6 +21,8 @@ public class ApiService implements IService {
     SearchIndexRepository indexRepository;
     @Autowired
     SiteRepository siteRepository;
+    @Autowired
+    private Config config;
 
     public Statistic getStatistic() {
         Statistic statistic = new Statistic();
@@ -26,7 +31,12 @@ public class ApiService implements IService {
         AtomicInteger allPages = new AtomicInteger();
         AtomicInteger allSites = new AtomicInteger();
 
-        siteRepository.findAll().forEach(it -> {
+        List<Site> siteList = siteRepository.findAll();
+
+        if (siteList.size() == 0) {
+        }
+
+        siteList.forEach(it -> {
             int pages = pageRepository.findAllBySite(it).size();
             int lemmas = lemmaRepository.findAllBySite(it).size();
 

@@ -2,24 +2,20 @@ package ru.gypsyjr.search;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.springframework.beans.factory.annotation.Autowired;
-import ru.gypsyjr.db.DBConnection;
 import ru.gypsyjr.lemmatizer.Lemmatizer;
-import ru.gypsyjr.models.*;
+import ru.gypsyjr.main.models.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SearchEngine {
-    private final DBConnection dbConnection;
     private final Lemmatizer lemmatizer;
     private List<String> words;
 
     public SearchEngine() {
         words = new ArrayList<>();
         lemmatizer = Lemmatizer.getInstance();
-        dbConnection = DBConnection.getInstance();
     }
 
     public void addSearchQuery(String query) {
@@ -42,7 +38,7 @@ public class SearchEngine {
     private List<Page> getPages(SortedSet<Lemma> lemmas) {
         List<Page> pages = new ArrayList<>();
 
-        List<?> pagesLemmas = dbConnection.getSearchIndexesByLemma(lemmas.first());
+        List<?> pagesLemmas = new ArrayList<>();
         pagesLemmas.forEach(it -> {
             if (it.getClass() == Page.class) {
                 Page page = (Page) it;
@@ -59,7 +55,7 @@ public class SearchEngine {
         lemmas.forEach(lemma -> {
             int count = 0;
             while (pages.size() > count) {
-                IndexTable indexTable = dbConnection.getSearchIndexesByLemma(lemma, pages.get(count));
+                IndexTable indexTable = new IndexTable();
                 if (indexTable == null) {
                     pages.remove(count);
                 } else {

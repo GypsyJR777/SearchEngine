@@ -1,4 +1,4 @@
-package ru.gypsyjr.models;
+package ru.gypsyjr.main.models;
 
 public class SearchResult implements Comparable<SearchResult>{
     private String uri;

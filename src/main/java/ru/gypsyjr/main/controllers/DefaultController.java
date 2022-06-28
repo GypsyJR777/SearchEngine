@@ -1,4 +1,4 @@
-package ru.gypsyjr.controllers;
+package ru.gypsyjr.main.controllers;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;

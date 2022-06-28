@@ -1,4 +1,4 @@
-package ru.gypsyjr.models;
+package ru.gypsyjr.main.models;
 
 public class Total {
     private Integer sites;

@@ -1,8 +1,7 @@
-package ru.gypsyjr.models;
+package ru.gypsyjr.main.models;
 
 import javax.persistence.*;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity

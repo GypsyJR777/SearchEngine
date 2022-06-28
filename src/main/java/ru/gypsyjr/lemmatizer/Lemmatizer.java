@@ -1,23 +1,23 @@
 package ru.gypsyjr.lemmatizer;
 
-import ru.gypsyjr.db.DBConnection;
-import ru.gypsyjr.models.IndexTable;
-import ru.gypsyjr.models.Lemma;
+import ru.gypsyjr.main.models.Lemma;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
+import ru.gypsyjr.main.models.Site;
+import ru.gypsyjr.main.repository.LemmaRepository;
 
 import java.io.IOException;
 import java.util.*;
 
 public class Lemmatizer {
-    private final DBConnection dbConnection;
     private final List<String> WRONG_TYPES = new ArrayList<>();
     private final LuceneMorphology russianMorph;
     private final LuceneMorphology englishMorph;
     private final Map<String, Lemma> wordsCount;
     private final Map<Lemma, Float> wordsRanks;
     private static volatile Lemmatizer instance;
+    private static LemmaRepository lemmaRepository;
 
     private Lemmatizer() {
         try {
@@ -28,7 +28,6 @@ public class Lemmatizer {
         }
 
 
-        dbConnection = DBConnection.getInstance();
         wordsCount = new HashMap<>();
         wordsRanks = new HashMap<>();
         WRONG_TYPES.add("ПРЕДЛ");
@@ -85,23 +84,23 @@ public class Lemmatizer {
         }
     }
 
-    private void addNewWord(String word, boolean isNew, float rank) {
+    private void addNewWord(String word, boolean isNew, float rank, Site site) {
         if (checkLanguage(word).equals("Russian")) {
             if (!checkRussianForm(word)) {
                 return;
             }
 
-            addNormalForms(word, isNew, russianMorph, rank);
+            addNormalForms(word, isNew, russianMorph, rank, site);
         } else if (checkLanguage(word).equals("English")) {
             if (!checkEnglishForm(word)) {
                 return;
             }
 
-            addNormalForms(word, isNew, englishMorph, rank);
+            addNormalForms(word, isNew, englishMorph, rank, site);
         }
     }
 
-    private void addNormalForms(String word, boolean isNew, LuceneMorphology wordMorph, float rank) {
+    private void addNormalForms(String word, boolean isNew, LuceneMorphology wordMorph, float rank, Site site) {
         List<String> normalWords = wordMorph.getNormalForms(word);
 
         normalWords.forEach(it -> {
@@ -110,19 +109,21 @@ public class Lemmatizer {
             if (wordsCount.containsKey(it) && isNew) {
                 lemma = wordsCount.get(it);
                 lemma.setFrequency(lemma.getFrequency() + 1);
+                lemma.setSite(site);
                 wordsCount.replace(it, lemma);
                 wordsRanks.clear();
 
-                dbConnection.updateData(lemma);
+                lemmaRepository.save(lemma);
             } else if (isNew) {
                 wordsRanks.clear();
                 lemma = new Lemma();
                 lemma.setFrequency(1);
                 lemma.setLemma(it);
+                lemma.setSite(site);
                 wordsCount.put(it, lemma);
                 wordsRanks.put(lemma, rank);
 
-                dbConnection.addClass(lemma);
+                lemmaRepository.save(lemma);
             } else if (wordsCount.containsKey(it)) {
                 lemma = wordsCount.get(it);
                 if (wordsRanks.containsKey(lemma)) {
@@ -136,7 +137,7 @@ public class Lemmatizer {
 
     public static Lemmatizer getInstance() {
         if (instance == null) {
-            synchronized (DBConnection.class) {
+            synchronized (Lemmatizer.class) {
                 if (instance == null) {
                     instance = new Lemmatizer();
                 }
@@ -146,12 +147,12 @@ public class Lemmatizer {
         return instance;
     }
 
-    public void addString(String sentence, boolean isNew, float rank) {
+    public void addString(String sentence, boolean isNew, float rank, Site site) {
         String regex = "[.,!?\\-:;()'\"]?";
         sentence = sentence.replaceAll(regex, "");
         String[] words = sentence.toLowerCase().split(" ");
         Arrays.stream(words).distinct().forEach(it -> {
-            addNewWord(it, isNew, rank);
+            addNewWord(it, isNew, rank, site);
         });
     }
 
@@ -184,22 +185,15 @@ public class Lemmatizer {
     //for stage 5
     public Lemma getLemma(String word) {
 
-
         if ((checkLanguage(word).equals("Russian") && checkRussianForm(word)) ||
                 (checkLanguage(word).equals("English") && checkEnglishForm(word))) {
-            return dbConnection.getLemmaByName(word);
+            return lemmaRepository.findLemmaByLemma(word);
         }
 
         return null;
-
-//        List<?> indexes = new ArrayList<>();
-//        indexes = dbConnection.getSearchIndexesByLemma(lemma);
-//        if ((indexes.size() / (float) dbConnection.getAllData(IndexTable.class).size()) < 0.2) {
-//            return indexes;
-//        }
-//
-//        return new ArrayList<>();
     }
 
-
+    public static void setLemmaRepository(LemmaRepository lemmaRepository) {
+        Lemmatizer.lemmaRepository = lemmaRepository;
+    }
 }

@@ -1,4 +1,4 @@
-package ru.gypsyjr.models;
+package ru.gypsyjr.main.models;
 
 import java.util.ArrayList;
 import java.util.List;

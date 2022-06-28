@@ -15,7 +15,7 @@ public class SearchEngine {
 
     public SearchEngine() {
         words = new ArrayList<>();
-        lemmatizer = Lemmatizer.getInstance();
+        lemmatizer = new Lemmatizer();
     }
 
     public void addSearchQuery(String query) {

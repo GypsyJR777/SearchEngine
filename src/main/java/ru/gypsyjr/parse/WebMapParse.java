@@ -27,7 +27,6 @@ public class WebMapParse extends RecursiveTask<Integer> {
     static {
         websites = new CopyOnWriteArraySet<>();
         pageId = new AtomicInteger(0);
-        lemmatizer = Lemmatizer.getInstance();
         fields = new HashMap<>();
 //        WebMapParse.dbConnection.getAllData(Field.class).forEach(it -> {
 //            WebMapParse.fields.put(it.getName(), it.getWeight());
@@ -37,7 +36,6 @@ public class WebMapParse extends RecursiveTask<Integer> {
     private static final Set<String> websites;
     private final static AtomicInteger pageId;
     private static String mainPage = "";
-    private final static Lemmatizer lemmatizer;
     //    private final static List<Field> fields;
     private final static Map<String, Float> fields;
     private static SearchIndexRepository searchIndexRepository;
@@ -47,8 +45,9 @@ public class WebMapParse extends RecursiveTask<Integer> {
     private final List<WebMapParse> children;
     private final String startPage;
     private final Site site;
+    private final Lemmatizer lemmatizer;
 
-    public WebMapParse(String startPage, Site site) {
+    public WebMapParse(String startPage, Site site, Lemmatizer lemmatizer) {
         children = new ArrayList<>();
 
         this.startPage = startPage;
@@ -60,10 +59,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
         }
 
         this.site = site;
-
-//        fieldRepository.findAll().forEach(it ->
-//                WebMapParse.fields.put(it.getName(), it.getWeight())
-//        );
+        this.lemmatizer = lemmatizer;
     }
 
     public WebMapParse(String startPage, Site site, FieldRepository fieldRepository,
@@ -91,6 +87,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
         }
 
         this.site = site;
+        lemmatizer = new Lemmatizer();
     }
 
     @Override
@@ -140,7 +137,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
     private void newChild(String attr) {
         websites.add(attr);
 
-        WebMapParse newChild = new WebMapParse(attr, site);
+        WebMapParse newChild = new WebMapParse(attr, site, lemmatizer);
         newChild.fork();
         children.add(newChild);
     }

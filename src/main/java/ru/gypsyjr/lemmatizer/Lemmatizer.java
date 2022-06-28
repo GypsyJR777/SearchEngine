@@ -16,10 +16,9 @@ public class Lemmatizer {
     private final LuceneMorphology englishMorph;
     private final Map<String, Lemma> wordsCount;
     private final Map<Lemma, Float> wordsRanks;
-    private static volatile Lemmatizer instance;
     private static LemmaRepository lemmaRepository;
 
-    private Lemmatizer() {
+    public Lemmatizer() {
         try {
             russianMorph = new RussianLuceneMorphology();
             englishMorph = new EnglishLuceneMorphology();
@@ -133,18 +132,6 @@ public class Lemmatizer {
                 }
             }
         });
-    }
-
-    public static Lemmatizer getInstance() {
-        if (instance == null) {
-            synchronized (Lemmatizer.class) {
-                if (instance == null) {
-                    instance = new Lemmatizer();
-                }
-            }
-        }
-
-        return instance;
     }
 
     public void addString(String sentence, boolean isNew, float rank, Site site) {

@@ -35,8 +35,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
     private static final Set<String> websites;
     private final static AtomicInteger pageId;
-    private static String mainPage = "";
-    //    private final static List<Field> fields;
+    private String mainPage = "";
     private final static Map<String, Float> fields;
     private static SearchIndexRepository searchIndexRepository;
     private static PageRepository pageRepository;
@@ -47,15 +46,15 @@ public class WebMapParse extends RecursiveTask<Integer> {
     private final Site site;
     private final Lemmatizer lemmatizer;
 
-    public WebMapParse(String startPage, Site site, Lemmatizer lemmatizer) {
+    public WebMapParse(String startPage, Site site, Lemmatizer lemmatizer, String mainPage) {
         children = new ArrayList<>();
 
         this.startPage = startPage;
         websites.add(startPage);
         pageCount = 0;
 
-        if (mainPage.equals("")) {
-            mainPage = startPage;
+        if (this.mainPage.equals("")) {
+            this.mainPage = mainPage;
         }
 
         this.site = site;
@@ -68,6 +67,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
         this.startPage = startPage;
         websites.add(startPage);
+        websites.add(startPage + "/");
         pageCount = 0;
 
         if (mainPage.equals("")) {
@@ -107,11 +107,13 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
                 addPage(response, document);
 
+
+                //TODO фиксить здесь
                 Elements elements = document.select("a");
                 elements.forEach(element -> {
                     String attr = element.attr("href");
-                    if (!attr.contains(mainPage)) {
-                        if (!attr.startsWith("/")) {
+                    if (!attr.contains("http")) {
+                        if (!attr.startsWith("/") && attr.length() > 1) {
                             attr = "/" + attr;
                         }
 
@@ -137,7 +139,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
     private void newChild(String attr) {
         websites.add(attr);
 
-        WebMapParse newChild = new WebMapParse(attr, site, lemmatizer);
+        WebMapParse newChild = new WebMapParse(attr, site, lemmatizer, mainPage);
         newChild.fork();
         children.add(newChild);
     }
@@ -179,5 +181,9 @@ public class WebMapParse extends RecursiveTask<Integer> {
             indexTable.setLemmaRank(rank);
             searchIndexRepository.save(indexTable);
         });
+    }
+
+    public Site getSite() {
+        return site;
     }
 }

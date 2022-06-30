@@ -5,10 +5,7 @@ import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.gypsyjr.main.Storage;
 import ru.gypsyjr.main.models.ApiStatistics;
 
@@ -55,6 +52,31 @@ public class ApiController {
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
+
+        return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+    }
+
+    @PostMapping("/indexPage")
+    public ResponseEntity<String> indexPage(@RequestParam(name = "url") String url) {
+        if (url == null) {
+            return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+        }
+
+        boolean addPage = storage.indexPage(url);
+        JSONObject response = new JSONObject();
+
+        try {
+            if (addPage) {
+                response.put("result", true);
+            } else {
+                response.put("result", false);
+                response.put("error", "Данная страница находится за пределами сайтов, " +
+                        "указанных в конфигурационном файле");
+            }
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
 
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
     }

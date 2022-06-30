@@ -10,5 +10,7 @@ import java.util.List;
 
 @Repository
 public interface PageRepository extends JpaRepository<Page, Integer> {
-    public List<Page> findAllBySite(Site site);
+    List<Page> findAllBySite(Site site);
+
+    Page findByPath(String path);
 }

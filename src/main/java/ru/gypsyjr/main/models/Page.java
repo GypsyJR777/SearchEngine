@@ -7,7 +7,7 @@ import javax.persistence.*;
 @Table(name = "page", indexes = @Index(name = "pathPage", columnList = "path"))
 public class Page {
     @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(name = "path", nullable = false, unique = true)

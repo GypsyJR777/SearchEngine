@@ -135,6 +135,13 @@ public class Lemmatizer {
     }
 
     public void addString(String sentence, boolean isNew, float rank, Site site) {
+        if (wordsCount.isEmpty()) {
+            List<Lemma> lemmas = lemmaRepository.findAllBySite(site);
+            if (!lemmas.isEmpty()) {
+                lemmas.forEach(lemma -> wordsCount.put(lemma.getLemma(), lemma));
+            }
+        }
+
         String regex = "[.,!?\\-:;()'\"]?";
         sentence = sentence.replaceAll(regex, "");
         String[] words = sentence.toLowerCase().split(" ");

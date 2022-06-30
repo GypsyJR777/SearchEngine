@@ -1,9 +1,8 @@
 package ru.gypsyjr.parse;
 
 
-import org.springframework.beans.factory.annotation.Autowired;
 import ru.gypsyjr.lemmatizer.Lemmatizer;
-import ru.gypsyjr.main.models.Field;
+import ru.gypsyjr.main.Config;
 import ru.gypsyjr.main.models.IndexTable;
 import ru.gypsyjr.main.models.Page;
 import org.jsoup.Connection;
@@ -20,25 +19,20 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class WebMapParse extends RecursiveTask<Integer> {
 
     static {
         websites = new CopyOnWriteArraySet<>();
-        pageId = new AtomicInteger(0);
         fields = new HashMap<>();
-//        WebMapParse.dbConnection.getAllData(Field.class).forEach(it -> {
-//            WebMapParse.fields.put(it.getName(), it.getWeight());
-//        });
     }
 
     private static final Set<String> websites;
-    private final static AtomicInteger pageId;
     private String mainPage = "";
     private final static Map<String, Float> fields;
     private static SearchIndexRepository searchIndexRepository;
     private static PageRepository pageRepository;
+    private static Config config;
 
     private Integer pageCount;
     private final List<WebMapParse> children;
@@ -61,7 +55,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
         this.lemmatizer = lemmatizer;
     }
 
-    public WebMapParse(String startPage, Site site, FieldRepository fieldRepository,
+    public WebMapParse(String startPage, Site site, Config config, FieldRepository fieldRepository,
                        SearchIndexRepository searchIndexRepository, PageRepository pageRepository) {
         children = new ArrayList<>();
 
@@ -88,44 +82,39 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
         this.site = site;
         lemmatizer = new Lemmatizer();
+
+        WebMapParse.config = config;
     }
 
     @Override
     protected Integer compute() {
-
         try {
             Connection.Response response = Jsoup.connect(startPage)
-                    .userAgent("Mozilla/5.0 (Windows NT 6.1; rv:98.0) Gecko/20100101 Firefox/98.0")
-                    .referrer("http://google.com")
+                    .userAgent(config.getUserAgent())
+                    .referrer(config.getReferrer())
                     .ignoreHttpErrors(true)
                     .execute();
 
             Document document = response.parse();
 
-            synchronized (pageId) {
-                pageId.getAndIncrement();
+            addPage(response, document);
 
-                addPage(response, document);
-
-
-                //TODO фиксить здесь
-                Elements elements = document.select("a");
-                elements.forEach(element -> {
-                    String attr = element.attr("href");
-                    if (!attr.contains("http")) {
-                        if (!attr.startsWith("/") && attr.length() > 1) {
-                            attr = "/" + attr;
-                        }
-
-                        attr = mainPage + attr;
+            Elements elements = document.select("a");
+            elements.forEach(element -> {
+                String attr = element.attr("href");
+                if (!attr.contains("http")) {
+                    if (!attr.startsWith("/") && attr.length() > 1) {
+                        attr = "/" + attr;
                     }
-                    if (attr.contains(mainPage) && !websites.contains(attr) && !attr.contains("#")) {
-                        newChild(attr);
-                    }
-                });
 
-                Thread.sleep(1000);
-            }
+                    attr = mainPage + attr;
+                }
+                if (attr.contains(mainPage) && !websites.contains(attr) && !attr.contains("#")) {
+                    newChild(attr);
+                }
+            });
+
+            Thread.sleep(1000);
 
         } catch (IOException | InterruptedException exception) {
             exception.printStackTrace();
@@ -134,6 +123,16 @@ public class WebMapParse extends RecursiveTask<Integer> {
         children.forEach(it -> pageCount += it.join());
 
         return pageCount;
+    }
+
+    public void addPage() throws IOException {
+        Connection.Response response = Jsoup.connect(startPage)
+                .userAgent(config.getUserAgent())
+                .referrer(config.getReferrer())
+                .ignoreHttpErrors(true)
+                .execute();
+
+        addPage(response, response.parse());
     }
 
     private void newChild(String attr) {
@@ -145,17 +144,17 @@ public class WebMapParse extends RecursiveTask<Integer> {
     }
 
     private void addPage(Connection.Response response, Document document) {
-        Page page = new Page();
+        Page page = pageRepository.findByPath(startPage);
+        if (page == null) {
+            page = new Page();
+        }
 
-        page.setId(pageId.get());
         page.setCode(response.statusCode());
         page.setPath(startPage);
         page.setContent(document.html());
         page.setSite(site);
 
         pageRepository.save(page);
-
-        pageCount++;
 
         if (response.statusCode() < 400) {
             addLemmas(document, page);

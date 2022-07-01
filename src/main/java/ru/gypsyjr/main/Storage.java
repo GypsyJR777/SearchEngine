@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -31,8 +32,8 @@ public class Storage {
     private SiteRepository siteRepository;
     @Autowired
     private Config config;
-    private final List<Thread> threads = new LinkedList<>();
-    private final List<ForkJoinPool> forkJoinPools = new LinkedList<>();
+    private List<Thread> threads = new ArrayList<>();
+    private List<ForkJoinPool> forkJoinPools = new ArrayList<>();
 
     private void clearData() {
         indexRepository.deleteAll();
@@ -42,7 +43,7 @@ public class Storage {
     }
 
     private WebMapParse newParse(Site site) {
-        return new WebMapParse(site.getUrl(), site, config, fieldRepository, indexRepository, pageRepository);
+        return new WebMapParse(site.getUrl(), site, config, fieldRepository, siteRepository, indexRepository, pageRepository);
     }
 
     public ApiStatistics getStatistic() {
@@ -88,10 +89,8 @@ public class Storage {
     }
 
     public void indexing() {
-        System.out.println("Threads: " + threads.size());
-        if (threads.size() > 0) {
-            return;
-        }
+        threads = new ArrayList<>();
+        forkJoinPools = new ArrayList<>();
 
         clearData();
         Lemmatizer.setLemmaRepository(lemmaRepository);
@@ -122,49 +121,74 @@ public class Storage {
         urls.clear();
         namesUrls.clear();
 
-        parses.forEach(parse -> threads.add(new Thread(() -> {
+        parses.forEach(parse ->  {
             Site site = parse.getSite();
 
             try {
-
                 site.setStatus(Status.INDEXING);
                 siteRepository.save(site);
 
-                ForkJoinPool forkJoinPool = new ForkJoinPool(NUMBER_OF_THREADS);
+                ForkJoinPool forkJoinPool = new ForkJoinPool();
 
                 forkJoinPools.add(forkJoinPool);
 
                 forkJoinPool.execute(parse);
-                int count = parse.join();
-
-                site.setStatus(Status.INDEXED);
-                siteRepository.save(site);
-
-                System.out.println("Сайт " + site.getName() + " проиндексирован,кол-во ссылок - " + count);
+//                parse.fork();
             } catch (CancellationException ex) {
                 ex.printStackTrace();
                 site.setLastError("Ошибка индексации: " + ex.getMessage());
                 site.setStatus(Status.FAILED);
                 siteRepository.save(site);
             }
-        })));
+        });
 
-        threads.forEach(Thread::start);
-        forkJoinPools.forEach(ForkJoinPool::shutdown);
+        parses.forEach(parse -> {
+            Site site = parse.getSite();
+            int count = 0;
+
+            count += parse.join();
+
+            site.setStatus(Status.INDEXED);
+            siteRepository.save(site);
+
+            System.out.println("Сайт " + site.getName() + " проиндексирован,кол-во ссылок - " + count);
+        });
+
+//        threads.forEach(Thread::start);
+//        forkJoinPools.forEach(ForkJoinPool::shutdown);
+//        threads.clear();
+//        forkJoinPools.clear();
     }
 
     public boolean startIndexing() {
-        System.out.println("Threads: " + threads.size());
+        AtomicBoolean isIndexing = new AtomicBoolean(false);
+
+        siteRepository.findAll().forEach(site -> {
+            if (site.getStatus().equals(Status.INDEXING)){
+                isIndexing.set(true);
+            }
+        });
+
+        if (isIndexing.get()){
+            return true;
+        }
         indexing();
 
-        System.out.println("Threads: " + threads.size());
-        return threads.size() > 0;
+        return false;
     }
 
     public boolean stopIndexing() {
         System.out.println("Потоков работает: " + threads.size());
 
-        if (threads.size() == 0) {
+        AtomicBoolean isIndexing = new AtomicBoolean(false);
+
+        siteRepository.findAll().forEach(site -> {
+            if (site.getStatus().equals(Status.INDEXING)){
+                isIndexing.set(true);
+            }
+        });
+
+        if (!isIndexing.get()){
             return true;
         }
 
@@ -202,8 +226,8 @@ public class Storage {
                     site.setName(namesUrls.get(i));
                     siteRepository.save(site);
 
-                    WebMapParse parse = new WebMapParse(mainPage, site, config, fieldRepository, indexRepository,
-                            pageRepository);
+                    WebMapParse parse = new WebMapParse(mainPage, site, config, fieldRepository, siteRepository,
+                            indexRepository, pageRepository);
                     try {
                         parse.addPage();
                     } catch (IOException e) {
@@ -222,8 +246,8 @@ public class Storage {
                     site.setStatus(Status.INDEXING);
                     siteRepository.save(site);
 
-                    WebMapParse parse = new WebMapParse(site.getUrl(), site, config, fieldRepository, indexRepository,
-                            pageRepository);
+                    WebMapParse parse = new WebMapParse(site.getUrl(), site, config, fieldRepository, siteRepository,
+                            indexRepository, pageRepository);
                     try {
                         parse.addPage();
                     } catch (IOException e) {

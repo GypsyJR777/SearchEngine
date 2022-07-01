@@ -15,10 +15,10 @@ spring:
 conf:
   sitesUrl:
     - http://www.playback.ru
-#    - https://www.skillbox.ru
+    - https://www.skillbox.ru
   sitesName:
     - Плейбек.ру
-#    - Skillbox
+    - Skillbox
   userAgent: Mozilla/5.0 (Windows NT 6.1; rv:98.0) Gecko/20100101 Firefox/98.0
   referrer: http://google.com
 

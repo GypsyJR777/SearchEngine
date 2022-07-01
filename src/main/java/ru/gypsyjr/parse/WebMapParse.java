@@ -10,11 +10,14 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import ru.gypsyjr.main.models.Site;
+import ru.gypsyjr.main.models.Status;
 import ru.gypsyjr.main.repository.FieldRepository;
 import ru.gypsyjr.main.repository.PageRepository;
 import ru.gypsyjr.main.repository.SearchIndexRepository;
+import ru.gypsyjr.main.repository.SiteRepository;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RecursiveTask;
@@ -32,6 +35,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
     private final static Map<String, Float> fields;
     private static SearchIndexRepository searchIndexRepository;
     private static PageRepository pageRepository;
+    private static SiteRepository siteRepository;
     private static Config config;
 
     private Integer pageCount;
@@ -55,7 +59,8 @@ public class WebMapParse extends RecursiveTask<Integer> {
         this.lemmatizer = lemmatizer;
     }
 
-    public WebMapParse(String startPage, Site site, Config config, FieldRepository fieldRepository,
+    public WebMapParse(String startPage, Site site, Config config,
+                       FieldRepository fieldRepository, SiteRepository siteRepository,
                        SearchIndexRepository searchIndexRepository, PageRepository pageRepository) {
         children = new ArrayList<>();
 
@@ -80,6 +85,10 @@ public class WebMapParse extends RecursiveTask<Integer> {
             WebMapParse.pageRepository = pageRepository;
         }
 
+        if (WebMapParse.siteRepository == null) {
+            WebMapParse.siteRepository = siteRepository;
+        }
+
         this.site = site;
         lemmatizer = new Lemmatizer();
 
@@ -97,7 +106,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
             Document document = response.parse();
 
-            Thread.sleep(2000);
+            Thread.sleep(1000);
 
             addPage(response, document);
 
@@ -116,8 +125,9 @@ public class WebMapParse extends RecursiveTask<Integer> {
                 }
             });
 
-        } catch (IOException | InterruptedException exception) {
-            exception.printStackTrace();
+        } catch (IOException | InterruptedException | NullPointerException exception) {
+            site.setLastError("Остановка индексации");
+            siteRepository.save(site);
         }
 
         children.forEach(it -> {

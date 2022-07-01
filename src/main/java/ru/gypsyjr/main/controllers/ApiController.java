@@ -26,10 +26,10 @@ public class ApiController {
         JSONObject response = new JSONObject();
         try {
             if (indexing) {
-                response.put("result", true);
-            } else {
                 response.put("result", false);
                 response.put("error", "Индексация уже запущена");
+            } else {
+                response.put("result", true);
             }
         } catch (JSONException e) {
             throw new RuntimeException(e);
@@ -43,11 +43,11 @@ public class ApiController {
         JSONObject response = new JSONObject();
 
         try {
-            if (!stopIndexing) {
-                response.put("result", true);
-            } else {
+            if (stopIndexing) {
                 response.put("result", false);
                 response.put("error", "Индексация не запущена");
+            } else {
+                response.put("result", true);
             }
         } catch (JSONException e) {
             throw new RuntimeException(e);

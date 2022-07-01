@@ -4,6 +4,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import ru.gypsyjr.lemmatizer.Lemmatizer;
 import ru.gypsyjr.main.models.*;
+import ru.gypsyjr.main.repository.PageRepository;
+import ru.gypsyjr.main.repository.SearchIndexRepository;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,30 +14,31 @@ import java.util.concurrent.atomic.AtomicReference;
 public class SearchEngine {
     private final Lemmatizer lemmatizer;
     private List<String> words;
+    private PageRepository pageRepository;
+    private SearchIndexRepository indexRepository;
 
     public SearchEngine() {
         words = new ArrayList<>();
         lemmatizer = new Lemmatizer();
     }
 
-    public void addSearchQuery(String query) {
+    public Set<SearchResult> addSearchQuery(String query, Site site, PageRepository pageRepository) {
         SortedSet<Lemma> lemmas = new TreeSet<>();
 
         for (String word : query.split(" ")) {
-            Lemma lemma = lemmatizer.getLemma(word.toLowerCase());
+            Lemma lemma = lemmatizer.getLemma(word.toLowerCase(), site);
             if (lemma != null) {
                 lemmas.add(lemma);
             }
         }
 
-        List<Page> pages = getPages(lemmas);
+        List<Page> pages = pageRepository.findAllBySite(site);
         List<IndexRanks> indexRanks = getIndexRanks(lemmas, pages);
-        SortedSet<SearchResult> searchResults = getSearchResults(indexRanks, lemmas);
 
-//        searchResults.forEach(System.out::println);
+        return getSearchResults(indexRanks, lemmas);
     }
 
-    private List<Page> getPages(SortedSet<Lemma> lemmas) {
+    private List<Page> getPages(SortedSet<Lemma> lemmas, Site site) {
         List<Page> pages = new ArrayList<>();
 
         List<?> pagesLemmas = new ArrayList<>();
@@ -55,7 +58,7 @@ public class SearchEngine {
         lemmas.forEach(lemma -> {
             int count = 0;
             while (pages.size() > count) {
-                IndexTable indexTable = new IndexTable();
+                IndexTable indexTable = indexRepository.findByLemmaAndPage(lemma, pages.get(count));
                 if (indexTable == null) {
                     pages.remove(count);
                 } else {

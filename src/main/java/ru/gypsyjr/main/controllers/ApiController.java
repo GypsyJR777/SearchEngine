@@ -22,7 +22,7 @@ public class ApiController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<String> startIndexing() {
-        boolean indexing = storage.indexing();
+        boolean indexing = storage.startIndexing();
         JSONObject response = new JSONObject();
         try {
             if (indexing) {
@@ -78,6 +78,16 @@ public class ApiController {
         }
 
 
+        return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<?> search(@RequestParam(name = "query") String query,
+                                    @RequestParam(name = "site", required = false) String site,
+                                    @RequestParam(name = "offset", defaultValue = "0") int offset,
+                                    @RequestParam(name = "limit", defaultValue = "20") int limit) {
+
+        JSONObject response = new JSONObject();
         return new ResponseEntity<>(response.toString(), HttpStatus.OK);
     }
 }

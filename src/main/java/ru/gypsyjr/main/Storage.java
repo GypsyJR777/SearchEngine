@@ -6,20 +6,18 @@ import ru.gypsyjr.lemmatizer.Lemmatizer;
 import ru.gypsyjr.main.models.*;
 import ru.gypsyjr.main.repository.*;
 import ru.gypsyjr.parse.WebMapParse;
+import ru.gypsyjr.search.SearchEngine;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
 @Service
 public class Storage {
-    private static final int NUMBER_OF_THREADS = 5;
+    private static final int NUMBER_OF_THREADS = 3;
 
     @Autowired
     private FieldRepository fieldRepository;
@@ -33,14 +31,14 @@ public class Storage {
     private SiteRepository siteRepository;
     @Autowired
     private Config config;
-    private final List<Thread> threads = new ArrayList<>();
-    private final List<ForkJoinPool> forkJoinPools = new ArrayList<>();
-    private boolean indexing = false;
+    private final List<Thread> threads = new LinkedList<>();
+    private final List<ForkJoinPool> forkJoinPools = new LinkedList<>();
 
     private void clearData() {
         indexRepository.deleteAll();
         lemmaRepository.deleteAll();
         pageRepository.deleteAll();
+        siteRepository.deleteAll();
     }
 
     private WebMapParse newParse(Site site) {
@@ -61,8 +59,8 @@ public class Storage {
         }
 
         siteList.forEach(it -> {
-            int pages = pageRepository.findAllBySite(it).size();
-            int lemmas = lemmaRepository.findAllBySite(it).size();
+            int pages = pageRepository.countBySite(it);
+            int lemmas = lemmaRepository.countBySite(it);
 
             it.setPages(pages);
             it.setLemmas(lemmas);
@@ -89,42 +87,40 @@ public class Storage {
         return statistics;
     }
 
-    public boolean indexing() {
-        indexing = true;
-
+    public void indexing() {
+        System.out.println("Threads: " + threads.size());
         if (threads.size() > 0) {
-            return false;
+            return;
         }
 
+        clearData();
         Lemmatizer.setLemmaRepository(lemmaRepository);
 
-        List<Site> sites = siteRepository.findAll();
         List<WebMapParse> parses = new ArrayList<>();
         List<String> urls = config.getSitesUrl();
         List<String> namesUrls = config.getSitesName();
 
-        if (sites.size() != urls.size()) {
-            for (int i = 0; i < urls.size(); ++i) {
-                String mainPage = urls.get(i);
 
-                Site site = siteRepository.findSiteByUrl(mainPage);
+        for (int i = 0; i < urls.size(); ++i) {
+            String mainPage = urls.get(i);
 
-                if (site == null) {
-                    site = new Site();
-                }
+            Site site = siteRepository.findSiteByUrl(mainPage);
 
-                site.setUrl(mainPage);
-                site.setStatusTime(new Date());
-                site.setStatus(Status.INDEXING);
-                site.setName(namesUrls.get(i));
-
-                parses.add(newParse(site));
-                siteRepository.save(site);
+            if (site == null) {
+                site = new Site();
             }
-        } else {
-            clearData();
-            sites.forEach(site -> parses.add(newParse(site)));
+
+            site.setUrl(mainPage);
+            site.setStatusTime(new Date());
+            site.setStatus(Status.INDEXING);
+            site.setName(namesUrls.get(i));
+
+            parses.add(newParse(site));
+            siteRepository.save(site);
         }
+
+        urls.clear();
+        namesUrls.clear();
 
         parses.forEach(parse -> threads.add(new Thread(() -> {
             Site site = parse.getSite();
@@ -155,16 +151,22 @@ public class Storage {
 
         threads.forEach(Thread::start);
         forkJoinPools.forEach(ForkJoinPool::shutdown);
+    }
 
-        return indexing;
+    public boolean startIndexing() {
+        System.out.println("Threads: " + threads.size());
+        indexing();
+
+        System.out.println("Threads: " + threads.size());
+        return threads.size() > 0;
     }
 
     public boolean stopIndexing() {
+        System.out.println("Потоков работает: " + threads.size());
+
         if (threads.size() == 0) {
             return true;
         }
-
-        indexing = false;
 
         forkJoinPools.forEach(ForkJoinPool::shutdownNow);
         threads.forEach(Thread::interrupt);
@@ -178,7 +180,7 @@ public class Storage {
         threads.clear();
         forkJoinPools.clear();
 
-        return indexing;
+        return false;
     }
 
     public boolean indexPage(String url) {
@@ -236,7 +238,14 @@ public class Storage {
             }
         }
 
-
         return false;
+    }
+
+    public Search search(String query, String site, int offset, int limit) {
+        SearchEngine searchEngine = new SearchEngine();
+        Set<SearchResult> searchResults = searchEngine.addSearchQuery(query, siteRepository.findSiteByUrl(site),
+                pageRepository);
+
+        return new Search();
     }
 }

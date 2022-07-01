@@ -10,7 +10,7 @@ public class Page {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "path", nullable = false, unique = true)
+    @Column(name = "path", nullable = false, unique = true, columnDefinition = "VARCHAR(256)")
     private String path;
 
     @Column(name = "code", nullable = false)

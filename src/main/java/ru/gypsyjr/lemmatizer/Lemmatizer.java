@@ -177,11 +177,11 @@ public class Lemmatizer {
 
 
     //for stage 5
-    public Lemma getLemma(String word) {
+    public Lemma getLemma(String word, Site site) {
 
         if ((checkLanguage(word).equals("Russian") && checkRussianForm(word)) ||
                 (checkLanguage(word).equals("English") && checkEnglishForm(word))) {
-            return lemmaRepository.findLemmaByLemma(word);
+            return lemmaRepository.findLemmaByLemmaAndSite(word, site);
         }
 
         return null;

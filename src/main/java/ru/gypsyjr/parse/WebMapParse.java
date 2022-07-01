@@ -97,6 +97,8 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
             Document document = response.parse();
 
+            Thread.sleep(2000);
+
             addPage(response, document);
 
             Elements elements = document.select("a");
@@ -114,13 +116,13 @@ public class WebMapParse extends RecursiveTask<Integer> {
                 }
             });
 
-            Thread.sleep(1000);
-
         } catch (IOException | InterruptedException exception) {
             exception.printStackTrace();
         }
 
-        children.forEach(it -> pageCount += it.join());
+        children.forEach(it -> {
+            pageCount += it.join();
+        });
 
         return pageCount;
     }

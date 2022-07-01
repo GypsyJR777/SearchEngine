@@ -12,5 +12,5 @@ import java.util.List;
 @Repository
 public interface SearchIndexRepository extends JpaRepository<IndexTable, Integer> {
     List<IndexTable> findByLemma(Lemma lemma);
-    List<IndexTable> findByLemmaAndPage(Lemma lemma, Page page);
+    IndexTable findByLemmaAndPage(Lemma lemma, Page page);
 }

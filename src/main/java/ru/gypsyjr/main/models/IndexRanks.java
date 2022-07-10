@@ -1,4 +1,4 @@
-package ru.gypsyjr.models;
+package ru.gypsyjr.main.models;
 
 import java.util.HashMap;
 import java.util.Map;

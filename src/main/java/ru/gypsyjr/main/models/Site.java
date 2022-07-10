@@ -1,8 +1,8 @@
-package ru.gypsyjr.models;
+package ru.gypsyjr.main.models;
 
 import javax.persistence.*;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Table(name = "site")
@@ -15,7 +15,7 @@ public class Site {
     private Status status;
 
     @Column(name = "status_time", nullable = false)
-    private LocalDateTime statusTime;
+    private Date statusTime;
 
     @Column(name = "last_error")
     private String lastError;
@@ -25,6 +25,9 @@ public class Site {
 
     @Column(name = "name", nullable = false)
     private String name;
+
+    private Integer pages;
+    private Integer lemmas;
 
     public int getId() {
         return id;
@@ -42,11 +45,11 @@ public class Site {
         this.status = status;
     }
 
-    public LocalDateTime getStatusTime() {
+    public Date getStatusTime() {
         return statusTime;
     }
 
-    public void setStatusTime(LocalDateTime statusTime) {
+    public void setStatusTime(Date statusTime) {
         this.statusTime = statusTime;
     }
 
@@ -72,5 +75,21 @@ public class Site {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Integer getPages() {
+        return pages;
+    }
+
+    public void setPages(Integer pages) {
+        this.pages = pages;
+    }
+
+    public Integer getLemmas() {
+        return lemmas;
+    }
+
+    public void setLemmas(Integer lemmas) {
+        this.lemmas = lemmas;
     }
 }

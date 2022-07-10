@@ -1,4 +1,4 @@
-package ru.gypsyjr.models;
+package ru.gypsyjr.main.models;
 
 public enum Status {
     INDEXING, INDEXED, FAILED

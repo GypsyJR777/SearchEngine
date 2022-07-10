@@ -1,25 +1,30 @@
 package ru.gypsyjr.lemmatizer;
 
-import ru.gypsyjr.db.DBConnection;
-import ru.gypsyjr.models.IndexTable;
-import ru.gypsyjr.models.Lemma;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+import ru.gypsyjr.main.models.Lemma;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
+import ru.gypsyjr.main.models.Site;
+import ru.gypsyjr.main.repository.LemmaRepository;
 
 import java.io.IOException;
 import java.util.*;
 
+
+@Component
+@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class Lemmatizer {
-    private final DBConnection dbConnection;
     private final List<String> WRONG_TYPES = new ArrayList<>();
     private final LuceneMorphology russianMorph;
     private final LuceneMorphology englishMorph;
-    private final Map<String, Lemma> wordsCount;
-    private final Map<Lemma, Float> wordsRanks;
-    private static volatile Lemmatizer instance;
+    private final LinkedHashMap<String, Lemma> wordsCount;
+    private final LinkedHashMap<Lemma, Float> wordsRanks;
+    private static LemmaRepository lemmaRepository;
 
-    private Lemmatizer() {
+    public Lemmatizer() {
         try {
             russianMorph = new RussianLuceneMorphology();
             englishMorph = new EnglishLuceneMorphology();
@@ -28,9 +33,8 @@ public class Lemmatizer {
         }
 
 
-        dbConnection = DBConnection.getInstance();
-        wordsCount = new HashMap<>();
-        wordsRanks = new HashMap<>();
+        wordsCount = new LinkedHashMap<>();
+        wordsRanks = new LinkedHashMap<>();
         WRONG_TYPES.add("ПРЕДЛ");
         WRONG_TYPES.add("СОЮЗ");
         WRONG_TYPES.add("МЕЖД");
@@ -85,23 +89,23 @@ public class Lemmatizer {
         }
     }
 
-    private void addNewWord(String word, boolean isNew, float rank) {
+    private void addNewWord(String word, boolean isNew, float rank, Site site) {
         if (checkLanguage(word).equals("Russian")) {
             if (!checkRussianForm(word)) {
                 return;
             }
 
-            addNormalForms(word, isNew, russianMorph, rank);
+            addNormalForms(word, isNew, russianMorph, rank, site);
         } else if (checkLanguage(word).equals("English")) {
             if (!checkEnglishForm(word)) {
                 return;
             }
 
-            addNormalForms(word, isNew, englishMorph, rank);
+            addNormalForms(word, isNew, englishMorph, rank, site);
         }
     }
 
-    private void addNormalForms(String word, boolean isNew, LuceneMorphology wordMorph, float rank) {
+    private void addNormalForms(String word, boolean isNew, LuceneMorphology wordMorph, float rank, Site site) {
         List<String> normalWords = wordMorph.getNormalForms(word);
 
         normalWords.forEach(it -> {
@@ -110,19 +114,21 @@ public class Lemmatizer {
             if (wordsCount.containsKey(it) && isNew) {
                 lemma = wordsCount.get(it);
                 lemma.setFrequency(lemma.getFrequency() + 1);
+                lemma.setSite(site);
                 wordsCount.replace(it, lemma);
                 wordsRanks.clear();
 
-                dbConnection.updateData(lemma);
+                lemmaRepository.save(lemma);
             } else if (isNew) {
                 wordsRanks.clear();
                 lemma = new Lemma();
                 lemma.setFrequency(1);
                 lemma.setLemma(it);
+                lemma.setSite(site);
                 wordsCount.put(it, lemma);
                 wordsRanks.put(lemma, rank);
 
-                dbConnection.addClass(lemma);
+                lemmaRepository.save(lemma);
             } else if (wordsCount.containsKey(it)) {
                 lemma = wordsCount.get(it);
                 if (wordsRanks.containsKey(lemma)) {
@@ -134,72 +140,37 @@ public class Lemmatizer {
         });
     }
 
-    public static Lemmatizer getInstance() {
-        if (instance == null) {
-            synchronized (DBConnection.class) {
-                if (instance == null) {
-                    instance = new Lemmatizer();
-                }
+    public void addString(String sentence, boolean isNew, float rank, Site site) {
+        if (wordsCount.isEmpty()) {
+            List<Lemma> lemmas = lemmaRepository.findAllBySite(site);
+            if (!lemmas.isEmpty()) {
+                lemmas.forEach(lemma -> wordsCount.put(lemma.getLemma(), lemma));
             }
         }
 
-        return instance;
-    }
-
-    public void addString(String sentence, boolean isNew, float rank) {
         String regex = "[.,!?\\-:;()'\"]?";
         sentence = sentence.replaceAll(regex, "");
         String[] words = sentence.toLowerCase().split(" ");
         Arrays.stream(words).distinct().forEach(it -> {
-            addNewWord(it, isNew, rank);
+            addNewWord(it, isNew, rank, site);
         });
     }
 
-    public void endAddMorphs() {
-        wordsRanks.clear();
-        wordsCount.clear();
-    }
-
-    public void printMorphInfo() {
-        wordsCount.forEach((key, value) -> {
-            System.out.println(key + ": " + value);
-        });
-    }
-
-    public List<Lemma> getLemmasWithCounts() {
-        List<Lemma> lemmas = new ArrayList<>();
-
-        wordsCount.forEach((key, value) -> {
-            lemmas.add(value);
-        });
-
-        return lemmas;
-    }
-
-    public Map<Lemma, Float> getLemmasWithRanks() {
+    public LinkedHashMap<Lemma, Float> getLemmasWithRanks() {
         return wordsRanks;
     }
 
-
-    //for stage 5
-    public Lemma getLemma(String word) {
-
+    public Lemma getLemma(String word, Site site) {
 
         if ((checkLanguage(word).equals("Russian") && checkRussianForm(word)) ||
                 (checkLanguage(word).equals("English") && checkEnglishForm(word))) {
-            return dbConnection.getLemmaByName(word);
+            return lemmaRepository.findLemmaByLemmaAndSite(word, site);
         }
 
         return null;
-
-//        List<?> indexes = new ArrayList<>();
-//        indexes = dbConnection.getSearchIndexesByLemma(lemma);
-//        if ((indexes.size() / (float) dbConnection.getAllData(IndexTable.class).size()) < 0.2) {
-//            return indexes;
-//        }
-//
-//        return new ArrayList<>();
     }
 
-
+    public static void setLemmaRepository(LemmaRepository lemmaRepository) {
+        Lemmatizer.lemmaRepository = lemmaRepository;
+    }
 }

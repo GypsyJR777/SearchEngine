@@ -2,55 +2,73 @@ package ru.gypsyjr.search;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.springframework.beans.factory.annotation.Autowired;
-import ru.gypsyjr.db.DBConnection;
 import ru.gypsyjr.lemmatizer.Lemmatizer;
-import ru.gypsyjr.models.*;
+import ru.gypsyjr.main.models.*;
+import ru.gypsyjr.main.repository.FieldRepository;
+import ru.gypsyjr.main.repository.PageRepository;
+import ru.gypsyjr.main.repository.SearchIndexRepository;
+import ru.gypsyjr.main.repository.SiteRepository;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SearchEngine {
-    private final DBConnection dbConnection;
     private final Lemmatizer lemmatizer;
-    private List<String> words;
+    private SearchIndexRepository indexRepository;
+    private FieldRepository fieldRepository;
+    private PageRepository pageRepository;
 
     public SearchEngine() {
-        words = new ArrayList<>();
-        lemmatizer = Lemmatizer.getInstance();
-        dbConnection = DBConnection.getInstance();
+        lemmatizer = new Lemmatizer();
     }
 
-    public void addSearchQuery(String query) {
+    public Search search(String query, Site site,
+                         PageRepository pageRepository, SearchIndexRepository indexRepository,
+                         FieldRepository fieldRepository, SiteRepository siteRepository) {
+        this.indexRepository = indexRepository;
+        this.fieldRepository = fieldRepository;
+        this.pageRepository = pageRepository;
+
+        SortedSet<SearchResult> searchResults = new TreeSet<>();
+
+        if (site == null) {
+            siteRepository.findAll().forEach(s -> {
+                searchResults.addAll(getSearchesBySite(s, query));
+            });
+        } else {
+            searchResults.addAll(getSearchesBySite(site, query));
+        }
+
+        Search search = new Search();
+
+        search.setCount(searchResults.size());
+        search.setResult(true);
+        search.setData(searchResults);
+
+        return search;
+    }
+
+    private Set<SearchResult> getSearchesBySite(Site site, String query) {
+        System.out.println(site.getUrl());
+        List<Page> pages = pageRepository.findAllBySite(site);
+        return addSearchQuery(query, site, pages);
+    }
+
+    private Set<SearchResult> addSearchQuery(String query, Site site, List<Page> pages) {
         SortedSet<Lemma> lemmas = new TreeSet<>();
 
         for (String word : query.split(" ")) {
-            Lemma lemma = lemmatizer.getLemma(word.toLowerCase());
+            Lemma lemma = lemmatizer.getLemma(word.toLowerCase(), site);
             if (lemma != null) {
                 lemmas.add(lemma);
             }
         }
 
-        List<Page> pages = getPages(lemmas);
         List<IndexRanks> indexRanks = getIndexRanks(lemmas, pages);
-        SortedSet<SearchResult> searchResults = getSearchResults(indexRanks, lemmas);
 
-//        searchResults.forEach(System.out::println);
-    }
-
-    private List<Page> getPages(SortedSet<Lemma> lemmas) {
-        List<Page> pages = new ArrayList<>();
-
-        List<?> pagesLemmas = dbConnection.getSearchIndexesByLemma(lemmas.first());
-        pagesLemmas.forEach(it -> {
-            if (it.getClass() == Page.class) {
-                Page page = (Page) it;
-                pages.add(page);
-            }
-        });
-
-        return pages;
+        return getSearchResults(indexRanks, lemmas, site);
     }
 
     private List<IndexRanks> getIndexRanks(SortedSet<Lemma> lemmas, List<Page> pages) {
@@ -59,7 +77,7 @@ public class SearchEngine {
         lemmas.forEach(lemma -> {
             int count = 0;
             while (pages.size() > count) {
-                IndexTable indexTable = dbConnection.getSearchIndexesByLemma(lemma, pages.get(count));
+                IndexTable indexTable = indexRepository.findByLemmaAndPage(lemma, pages.get(count));
                 if (indexTable == null) {
                     pages.remove(count);
                 } else {
@@ -79,39 +97,52 @@ public class SearchEngine {
         return indexRanks;
     }
 
-    private SortedSet<SearchResult> getSearchResults(List<IndexRanks> indexRanks, SortedSet<Lemma> lemmas) {
+    private SortedSet<SearchResult> getSearchResults(List<IndexRanks> indexRanks, SortedSet<Lemma> lemmas, Site site) {
         SortedSet<SearchResult> searchResults = new TreeSet<>();
+        List<Field> fieldList = fieldRepository.findAll();
 
         indexRanks.forEach(it -> {
-            SearchResult sResult = new SearchResult();
             Document document = Jsoup.parse(it.getPage().getContent());
 
             AtomicReference<String> snippet = new AtomicReference<>("");
             AtomicInteger maxSnippet = new AtomicInteger();
+            SearchResult sResult = new SearchResult();
+            AtomicBoolean isHaven = new AtomicBoolean(false);
 
-            document.select("div").forEach(i -> {
-                String str = i.text().toLowerCase();
-                int count = 0;
-                for(Lemma lem: lemmas.stream().toList()){
-                    String l = lem.getLemma();
-                    if (str.contains(l)){
-                        count++;
-                        str = str.replaceAll("(?i)" + l,
-                                "<b>" + l + "</b>");
+            fieldList.forEach(field -> {
+
+                document.select(field.getSelector()).forEach(i -> {
+                    String str = i.text().toLowerCase();
+                    int count = 0;
+                    for (Lemma lem : lemmas.stream().toList()) {
+                        String l = lem.getLemma();
+                        if (str.contains(l)) {
+                            count++;
+                            str = str.replaceAll("(?i)" + l,
+                                    "<b>" + l + "</b>");
+                        } else {
+                            lemmas.remove(lem);
+                        }
                     }
-                }
 
-                if (count > maxSnippet.get()) {
-                    snippet.set(str);
-                    maxSnippet.set(count);
-                }
+                    if (count > maxSnippet.get()) {
+                        snippet.set(str);
+                        maxSnippet.set(count);
+                        isHaven.set(true);
+                    }
+                });
             });
-            sResult.setTitle(document.title());
-            sResult.setRelevance(it.getRRel());
-            sResult.setSnippet(snippet.get());
-            sResult.setUri(it.getPage().getPath());
 
-            searchResults.add(sResult);
+            if (isHaven.get()) {
+                sResult.setTitle(document.title());
+                sResult.setRelevance(it.getRRel());
+                sResult.setSnippet(snippet.get());
+                sResult.setUri(it.getPage().getPath().replace(site.getUrl(), ""));
+                sResult.setSite(site.getUrl());
+                sResult.setSiteName(site.getName());
+
+                searchResults.add(sResult);
+            }
         });
 
         return searchResults;

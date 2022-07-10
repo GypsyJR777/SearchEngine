@@ -1,29 +1,33 @@
 package ru.gypsyjr.parse;
 
 
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 import ru.gypsyjr.lemmatizer.Lemmatizer;
 import ru.gypsyjr.main.Config;
-import ru.gypsyjr.main.models.IndexTable;
-import ru.gypsyjr.main.models.Page;
+import ru.gypsyjr.main.models.*;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import ru.gypsyjr.main.models.Site;
-import ru.gypsyjr.main.models.Status;
 import ru.gypsyjr.main.repository.FieldRepository;
 import ru.gypsyjr.main.repository.PageRepository;
 import ru.gypsyjr.main.repository.SearchIndexRepository;
 import ru.gypsyjr.main.repository.SiteRepository;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
+@Component
+@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class WebMapParse extends RecursiveTask<Integer> {
+    private static final List<String> WRONG_TYPES = Arrays.asList("jpg", "jpeg","pdf", "png", "gif", "zip",
+            "tar", "jar", "gz", "svg", "ppt", "pptx");
 
     static {
         websites = new CopyOnWriteArraySet<>();
@@ -31,6 +35,8 @@ public class WebMapParse extends RecursiveTask<Integer> {
     }
 
     private static final Set<String> websites;
+
+    private static AtomicInteger pageId;
     private String mainPage = "";
     private final static Map<String, Float> fields;
     private static SearchIndexRepository searchIndexRepository;
@@ -40,7 +46,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
     private Integer pageCount;
     private final List<WebMapParse> children;
-    private final String startPage;
+    private String startPage;
     private final Site site;
     private final Lemmatizer lemmatizer;
 
@@ -93,46 +99,60 @@ public class WebMapParse extends RecursiveTask<Integer> {
         lemmatizer = new Lemmatizer();
 
         WebMapParse.config = config;
+
+        WebMapParse.pageId = new AtomicInteger(0);
     }
 
     @Override
     protected Integer compute() {
-        try {
-            Connection.Response response = Jsoup.connect(startPage)
-                    .userAgent(config.getUserAgent())
-                    .referrer(config.getReferrer())
-                    .ignoreHttpErrors(true)
-                    .execute();
-
-            Document document = response.parse();
-
-            Thread.sleep(1000);
-
-            addPage(response, document);
-
-            Elements elements = document.select("a");
-            elements.forEach(element -> {
-                String attr = element.attr("href");
-                if (!attr.contains("http")) {
-                    if (!attr.startsWith("/") && attr.length() > 1) {
-                        attr = "/" + attr;
-                    }
-
-                    attr = mainPage + attr;
+        if (checkType(startPage)) {
+            try {
+                if (!startPage.endsWith("/")) {
+                    startPage += "/";
                 }
-                if (attr.contains(mainPage) && !websites.contains(attr) && !attr.contains("#")) {
-                    newChild(attr);
+                synchronized (pageId) {
+                    System.out.println(startPage);
+
+                    pageId.getAndIncrement();
+
+                    Connection.Response response = Jsoup.connect(startPage)
+                            .ignoreHttpErrors(true)
+                            .userAgent(config.getUserAgent())
+                            .referrer(config.getReferrer())
+                            .execute();
+
+                    Document document = response.parse();
+
+                    Thread.sleep(1000);
+
+                    addPage(response, document);
+
+                    Elements elements = document.select("a");
+                    elements.forEach(element -> {
+                        String attr = element.attr("href");
+                        if (!attr.contains("http")) {
+                            if (!attr.startsWith("/") && attr.length() > 1) {
+                                attr = "/" + attr;
+                            }
+
+                            attr = mainPage + attr;
+                        }
+
+                        if (attr.contains(mainPage) && !websites.contains(attr) && !attr.contains("#")) {
+                            newChild(attr);
+                        }
+                    });
                 }
+
+            } catch (IOException | InterruptedException | NullPointerException exception) {
+                site.setLastError("Остановка индексации");
+                siteRepository.save(site);
+            }
+
+            children.forEach(it -> {
+                pageCount += it.join();
             });
-
-        } catch (IOException | InterruptedException | NullPointerException exception) {
-            site.setLastError("Остановка индексации");
-            siteRepository.save(site);
         }
-
-        children.forEach(it -> {
-            pageCount += it.join();
-        });
 
         return pageCount;
     }
@@ -185,6 +205,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
     }
 
     private void addIndexTable(Page page) {
+//        Map<Lemma, Float> lemmas = lemmatizer.getLemmasWithRanks();
         lemmatizer.getLemmasWithRanks().forEach((lemma, rank) -> {
             IndexTable indexTable = new IndexTable();
             indexTable.setLemma(lemma);
@@ -194,7 +215,12 @@ public class WebMapParse extends RecursiveTask<Integer> {
         });
     }
 
+    private boolean checkType(String pathPage) {
+        return !WRONG_TYPES.contains(pathPage.substring(pathPage.lastIndexOf(".") + 1));
+    }
+
     public Site getSite() {
         return site;
     }
+
 }

@@ -1,5 +1,8 @@
 package ru.gypsyjr.lemmatizer;
 
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 import ru.gypsyjr.main.models.Lemma;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
@@ -10,12 +13,15 @@ import ru.gypsyjr.main.repository.LemmaRepository;
 import java.io.IOException;
 import java.util.*;
 
+
+@Component
+@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class Lemmatizer {
     private final List<String> WRONG_TYPES = new ArrayList<>();
     private final LuceneMorphology russianMorph;
     private final LuceneMorphology englishMorph;
-    private final Map<String, Lemma> wordsCount;
-    private final Map<Lemma, Float> wordsRanks;
+    private final LinkedHashMap<String, Lemma> wordsCount;
+    private final LinkedHashMap<Lemma, Float> wordsRanks;
     private static LemmaRepository lemmaRepository;
 
     public Lemmatizer() {
@@ -27,8 +33,8 @@ public class Lemmatizer {
         }
 
 
-        wordsCount = new HashMap<>();
-        wordsRanks = new HashMap<>();
+        wordsCount = new LinkedHashMap<>();
+        wordsRanks = new LinkedHashMap<>();
         WRONG_TYPES.add("ПРЕДЛ");
         WRONG_TYPES.add("СОЮЗ");
         WRONG_TYPES.add("МЕЖД");
@@ -171,7 +177,7 @@ public class Lemmatizer {
         return lemmas;
     }
 
-    public Map<Lemma, Float> getLemmasWithRanks() {
+    public LinkedHashMap<Lemma, Float> getLemmasWithRanks() {
         return wordsRanks;
     }
 

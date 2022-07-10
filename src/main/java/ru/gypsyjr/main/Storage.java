@@ -121,41 +121,72 @@ public class Storage {
         urls.clear();
         namesUrls.clear();
 
-        parses.forEach(parse ->  {
+
+        parses.forEach(parse -> threads.add(new Thread(() -> {
             Site site = parse.getSite();
 
             try {
+
                 site.setStatus(Status.INDEXING);
                 siteRepository.save(site);
 
-                ForkJoinPool forkJoinPool = new ForkJoinPool();
+                ForkJoinPool forkJoinPool = new ForkJoinPool(NUMBER_OF_THREADS);
 
                 forkJoinPools.add(forkJoinPool);
 
                 forkJoinPool.execute(parse);
-//                parse.fork();
+                int count = parse.join();
+
+                site.setStatus(Status.INDEXED);
+                siteRepository.save(site);
+
+                System.out.println("Сайт " + site.getName() + " проиндексирован,кол-во ссылок - " + count);
             } catch (CancellationException ex) {
                 ex.printStackTrace();
                 site.setLastError("Ошибка индексации: " + ex.getMessage());
                 site.setStatus(Status.FAILED);
                 siteRepository.save(site);
             }
-        });
+        })));
 
-        parses.forEach(parse -> {
-            Site site = parse.getSite();
-            int count = 0;
+        threads.forEach(Thread::start);
+        forkJoinPools.forEach(ForkJoinPool::shutdown);
 
-            count += parse.join();
 
-            site.setStatus(Status.INDEXED);
-            siteRepository.save(site);
-
-            System.out.println("Сайт " + site.getName() + " проиндексирован,кол-во ссылок - " + count);
-        });
+//        parses.forEach(parse ->  {
+//            Site site = parse.getSite();
+//
+//            try {
+//                site.setStatus(Status.INDEXING);
+//                siteRepository.save(site);
+//
+//                ForkJoinPool forkJoinPool = new ForkJoinPool();
+//                forkJoinPool.execute(parse);
+//                forkJoinPools.add(forkJoinPool);
+//
+////                parse.fork();
+//            } catch (CancellationException ex) {
+//                ex.printStackTrace();
+//                site.setLastError("Ошибка индексации: " + ex.getMessage());
+//                site.setStatus(Status.FAILED);
+//                siteRepository.save(site);
+//            }
+//        });
+//
+//        parses.forEach(parse -> {
+//            Site site = parse.getSite();
+//            int count = 0;
+//
+//            count += parse.join();
+//
+//            site.setStatus(Status.INDEXED);
+//            siteRepository.save(site);
+//
+//            System.out.println("Сайт " + site.getName() + " проиндексирован,кол-во ссылок - " + count);
+//        });
 
 //        threads.forEach(Thread::start);
-//        forkJoinPools.forEach(ForkJoinPool::shutdown);
+        forkJoinPools.forEach(ForkJoinPool::shutdown);
 //        threads.clear();
 //        forkJoinPools.clear();
     }
@@ -172,7 +203,7 @@ public class Storage {
         if (isIndexing.get()){
             return true;
         }
-        indexing();
+        new Thread(this::indexing).start();
 
         return false;
     }

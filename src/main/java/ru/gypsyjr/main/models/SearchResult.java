@@ -1,10 +1,28 @@
 package ru.gypsyjr.main.models;
 
-public class SearchResult implements Comparable<SearchResult>{
+public class SearchResult implements Comparable<SearchResult> {
+    private String site;
+    private String siteName;
     private String uri;
     private String title;
     private String snippet;
     private float relevance;
+
+    public String getSite() {
+        return site;
+    }
+
+    public void setSite(String site) {
+        this.site = site;
+    }
+
+    public String getSiteName() {
+        return siteName;
+    }
+
+    public void setSiteName(String siteName) {
+        this.siteName = siteName;
+    }
 
     public String getUri() {
         return uri;
@@ -40,7 +58,7 @@ public class SearchResult implements Comparable<SearchResult>{
 
     @Override
     public int compareTo(SearchResult o) {
-        if (relevance > o.getRelevance()){
+        if (relevance > o.getRelevance()) {
             return -1;
         }
         return 1;

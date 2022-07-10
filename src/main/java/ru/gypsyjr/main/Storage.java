@@ -126,7 +126,6 @@ public class Storage {
             Site site = parse.getSite();
 
             try {
-
                 site.setStatus(Status.INDEXING);
                 siteRepository.save(site);
 
@@ -152,55 +151,19 @@ public class Storage {
         threads.forEach(Thread::start);
         forkJoinPools.forEach(ForkJoinPool::shutdown);
 
-
-//        parses.forEach(parse ->  {
-//            Site site = parse.getSite();
-//
-//            try {
-//                site.setStatus(Status.INDEXING);
-//                siteRepository.save(site);
-//
-//                ForkJoinPool forkJoinPool = new ForkJoinPool();
-//                forkJoinPool.execute(parse);
-//                forkJoinPools.add(forkJoinPool);
-//
-////                parse.fork();
-//            } catch (CancellationException ex) {
-//                ex.printStackTrace();
-//                site.setLastError("Ошибка индексации: " + ex.getMessage());
-//                site.setStatus(Status.FAILED);
-//                siteRepository.save(site);
-//            }
-//        });
-//
-//        parses.forEach(parse -> {
-//            Site site = parse.getSite();
-//            int count = 0;
-//
-//            count += parse.join();
-//
-//            site.setStatus(Status.INDEXED);
-//            siteRepository.save(site);
-//
-//            System.out.println("Сайт " + site.getName() + " проиндексирован,кол-во ссылок - " + count);
-//        });
-
-//        threads.forEach(Thread::start);
         forkJoinPools.forEach(ForkJoinPool::shutdown);
-//        threads.clear();
-//        forkJoinPools.clear();
     }
 
     public boolean startIndexing() {
         AtomicBoolean isIndexing = new AtomicBoolean(false);
 
         siteRepository.findAll().forEach(site -> {
-            if (site.getStatus().equals(Status.INDEXING)){
+            if (site.getStatus().equals(Status.INDEXING)) {
                 isIndexing.set(true);
             }
         });
 
-        if (isIndexing.get()){
+        if (isIndexing.get()) {
             return true;
         }
         new Thread(this::indexing).start();
@@ -214,12 +177,12 @@ public class Storage {
         AtomicBoolean isIndexing = new AtomicBoolean(false);
 
         siteRepository.findAll().forEach(site -> {
-            if (site.getStatus().equals(Status.INDEXING)){
+            if (site.getStatus().equals(Status.INDEXING)) {
                 isIndexing.set(true);
             }
         });
 
-        if (!isIndexing.get()){
+        if (!isIndexing.get()) {
             return true;
         }
 
@@ -297,10 +260,11 @@ public class Storage {
     }
 
     public Search search(String query, String site, int offset, int limit) {
-        SearchEngine searchEngine = new SearchEngine();
-        Set<SearchResult> searchResults = searchEngine.addSearchQuery(query, siteRepository.findSiteByUrl(site),
-                pageRepository);
+        Lemmatizer.setLemmaRepository(lemmaRepository);
 
-        return new Search();
+        SearchEngine searchEngine = new SearchEngine();
+
+        return searchEngine.search(query, siteRepository.findSiteByUrl(site), pageRepository,
+                indexRepository, fieldRepository, siteRepository);
     }
 }

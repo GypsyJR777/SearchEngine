@@ -1,11 +1,11 @@
 package ru.gypsyjr.main.models;
 
-import java.util.SortedSet;
+import java.util.Set;
 
 public class Search {
     private boolean result;
     private int count;
-    private SortedSet<SearchResult> data;
+    private Set<SearchResult> data;
 
     public boolean isResult() {
         return result;
@@ -23,11 +23,11 @@ public class Search {
         this.count = count;
     }
 
-    public SortedSet<SearchResult> getData() {
+    public Set<SearchResult> getData() {
         return data;
     }
 
-    public void setData(SortedSet<SearchResult> data) {
+    public void setData(Set<SearchResult> data) {
         this.data = data;
         setCount(data.size());
     }

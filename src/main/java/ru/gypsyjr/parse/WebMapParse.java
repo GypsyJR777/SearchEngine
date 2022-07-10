@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 @Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class WebMapParse extends RecursiveTask<Integer> {
-    private static final List<String> WRONG_TYPES = Arrays.asList("jpg", "jpeg","pdf", "png", "gif", "zip",
+    private static final List<String> WRONG_TYPES = Arrays.asList("jpg", "jpeg", "pdf", "png", "gif", "zip",
             "tar", "jar", "gz", "svg", "ppt", "pptx");
 
     static {
@@ -111,8 +111,6 @@ public class WebMapParse extends RecursiveTask<Integer> {
                     startPage += "/";
                 }
                 synchronized (pageId) {
-                    System.out.println(startPage);
-
                     pageId.getAndIncrement();
 
                     Connection.Response response = Jsoup.connect(startPage)
@@ -205,7 +203,6 @@ public class WebMapParse extends RecursiveTask<Integer> {
     }
 
     private void addIndexTable(Page page) {
-//        Map<Lemma, Float> lemmas = lemmatizer.getLemmasWithRanks();
         lemmatizer.getLemmasWithRanks().forEach((lemma, rank) -> {
             IndexTable indexTable = new IndexTable();
             indexTable.setLemma(lemma);
@@ -222,5 +219,4 @@ public class WebMapParse extends RecursiveTask<Integer> {
     public Site getSite() {
         return site;
     }
-
 }

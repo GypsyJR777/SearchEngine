@@ -156,33 +156,10 @@ public class Lemmatizer {
         });
     }
 
-    public void endAddMorphs() {
-        wordsRanks.clear();
-        wordsCount.clear();
-    }
-
-    public void printMorphInfo() {
-        wordsCount.forEach((key, value) -> {
-            System.out.println(key + ": " + value);
-        });
-    }
-
-    public List<Lemma> getLemmasWithCounts() {
-        List<Lemma> lemmas = new ArrayList<>();
-
-        wordsCount.forEach((key, value) -> {
-            lemmas.add(value);
-        });
-
-        return lemmas;
-    }
-
     public LinkedHashMap<Lemma, Float> getLemmasWithRanks() {
         return wordsRanks;
     }
 
-
-    //for stage 5
     public Lemma getLemma(String word, Site site) {
 
         if ((checkLanguage(word).equals("Russian") && checkRussianForm(word)) ||

@@ -144,6 +144,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
             } catch (IOException | InterruptedException | NullPointerException exception) {
                 site.setLastError("Остановка индексации");
+                site.setStatus(Status.FAILED);
                 siteRepository.save(site);
             }
 

@@ -1,11 +1,12 @@
 package ru.gypsyjr.main.models;
 
 import java.util.Set;
+import java.util.TreeSet;
 
 public class Search {
-    private boolean result;
-    private int count;
-    private Set<SearchResult> data;
+    private boolean result = true;
+    private int count = 0;
+    private Set<SearchResult> data = new TreeSet<>();
 
     public boolean isResult() {
         return result;

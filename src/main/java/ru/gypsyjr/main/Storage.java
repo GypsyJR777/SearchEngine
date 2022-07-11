@@ -264,7 +264,25 @@ public class Storage {
 
         SearchEngine searchEngine = new SearchEngine();
 
-        return searchEngine.search(query, siteRepository.findSiteByUrl(site), pageRepository,
+        Search search = searchEngine.search(query, siteRepository.findSiteByUrl(site), pageRepository,
                 indexRepository, fieldRepository, siteRepository);
+
+        if (search.getCount() < offset) {
+            return new Search();
+        }
+
+        if (search.getCount() > limit) {
+            Set<SearchResult> searchResults = new TreeSet<>();
+
+            search.getData().forEach(it -> {
+                if (searchResults.size() <= limit) {
+                    searchResults.add(it);
+                }
+            });
+
+            search.setData(searchResults);
+        }
+
+        return search;
     }
 }

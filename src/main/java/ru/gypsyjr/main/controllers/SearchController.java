@@ -39,7 +39,7 @@ public class SearchController {
             return new ResponseEntity<>(response.toString(), HttpStatus.OK);
         }
 
-        if (site == null || siteRepository.findSiteByUrl(site).getUrl() == null) {
+        if (site != null && siteRepository.findSiteByUrl(site).getUrl() == null) {
             JSONObject response = new JSONObject();
 
             try {

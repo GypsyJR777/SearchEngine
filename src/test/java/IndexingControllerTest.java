@@ -1,7 +1,6 @@
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -11,13 +10,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import ru.gypsyjr.main.Config;
 import ru.gypsyjr.main.Storage;
 import ru.gypsyjr.main.controllers.IndexingController;
-import ru.gypsyjr.main.models.Site;
-import ru.gypsyjr.main.models.Status;
 import ru.gypsyjr.main.repository.SiteRepository;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.*;
@@ -31,12 +24,6 @@ public class IndexingControllerTest {
 
     @MockBean
     Storage storage;
-
-    @MockBean
-    Config config;
-
-    @MockBean
-    SiteRepository siteRepository;
 
     @Test
     public void getStartIndexing_success() throws Exception {

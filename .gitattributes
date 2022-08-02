@@ -1,4 +1,4 @@
 *.rb linguist-language=Java
 
-resources/* linguist-vendored
+static/* linguist-vendored
 docs/* linguist-documentation

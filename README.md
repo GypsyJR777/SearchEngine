@@ -4,8 +4,7 @@ ____
 
 :page_facing_up: _Stack_:
 Spring Framework,
-JDBC,
-Hibernate,
+JPA
 JSOUP,
 SQL,
 Morphology Library Lucene.

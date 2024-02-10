@@ -77,7 +77,7 @@ public class SearchEngine {
         lemmas.forEach(lemma -> {
             int count = 0;
             while (pages.size() > count) {
-                IndexTable indexTable = indexRepository.findByLemmaAndPage(lemma, pages.get(count));
+                IndexTable indexTable = indexRepository.findFirstByLemmaAndPage(lemma, pages.get(count));
                 if (indexTable == null) {
                     pages.remove(count);
                 } else {
@@ -120,9 +120,9 @@ public class SearchEngine {
                             count++;
                             str = str.replaceAll("(?i)" + l,
                                     "<b>" + l + "</b>");
-                        } else {
+                        } /*else {
                             lemmas.remove(lem);
-                        }
+                        }*/
                     }
 
                     if (count > maxSnippet.get()) {

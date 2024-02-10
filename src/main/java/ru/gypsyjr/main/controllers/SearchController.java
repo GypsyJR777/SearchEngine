@@ -26,7 +26,7 @@ public class SearchController {
                                     @RequestParam(name = "site", required = false) String site,
                                     @RequestParam(name = "offset", defaultValue = "0") int offset,
                                     @RequestParam(name = "limit", defaultValue = "20") int limit) {
-        if (query == null) {
+        if (query == null || query.isBlank()) {
             JSONObject response = new JSONObject();
 
             try {

@@ -1,9 +1,6 @@
 package ru.gypsyjr.parse;
 
 
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 import ru.gypsyjr.lemmatizer.Lemmatizer;
 import ru.gypsyjr.main.Config;
 import ru.gypsyjr.main.models.*;
@@ -23,8 +20,6 @@ import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Component
-@Scope(scopeName = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class WebMapParse extends RecursiveTask<Integer> {
     private static final List<String> WRONG_TYPES = Arrays.asList("jpg", "jpeg", "pdf", "png", "gif", "zip",
             "tar", "jar", "gz", "svg", "ppt", "pptx");
@@ -44,7 +39,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
     private static SiteRepository siteRepository;
     private static Config config;
 
-    private Integer pageCount;
+    private AtomicInteger pageCount;
     private final List<WebMapParse> children;
     private String startPage;
     private final Site site;
@@ -55,7 +50,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
         this.startPage = startPage;
         websites.add(startPage);
-        pageCount = 0;
+        pageCount = new AtomicInteger(0);
 
         if (this.mainPage.equals("")) {
             this.mainPage = mainPage;
@@ -73,7 +68,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
         this.startPage = startPage;
         websites.add(startPage);
         websites.add(startPage + "/");
-        pageCount = 0;
+        pageCount = new AtomicInteger(0);
 
         if (mainPage.equals("")) {
             mainPage = startPage;
@@ -121,7 +116,7 @@ public class WebMapParse extends RecursiveTask<Integer> {
 
                     Document document = response.parse();
 
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
 
                     addPage(response, document);
 
@@ -149,11 +144,11 @@ public class WebMapParse extends RecursiveTask<Integer> {
             }
 
             children.forEach(it -> {
-                pageCount += it.join();
+                pageCount.addAndGet(it.join());
             });
         }
 
-        return pageCount;
+        return pageCount.get();
     }
 
     public void addPage() throws IOException {

@@ -45,7 +45,7 @@ public class SearchResult implements Comparable<SearchResult> {
     }
 
     public void setSnippet(String snippet) {
-        this.snippet = snippet;
+        this.snippet = snippet.substring(0, Math.min(snippet.length(), 200)) + "...";
     }
 
     public float getRelevance() {

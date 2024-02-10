@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class Storage {
-    private static final int NUMBER_OF_THREADS = 3;
+    private static final int NUMBER_OF_THREADS = 6;
 
     @Autowired
     private FieldRepository fieldRepository;
@@ -150,8 +150,6 @@ public class Storage {
 
         threads.forEach(Thread::start);
         forkJoinPools.forEach(ForkJoinPool::shutdown);
-
-        forkJoinPools.forEach(ForkJoinPool::shutdown);
     }
 
     public boolean startIndexing() {
@@ -205,12 +203,13 @@ public class Storage {
         Lemmatizer.setLemmaRepository(lemmaRepository);
         List<Site> siteList = siteRepository.findAll();
 
-        if (siteList.size() == 0) {
+        if (siteList.isEmpty()) {
             List<String> urls = config.getSitesUrl();
             List<String> namesUrls = config.getSitesName();
 
             for (int i = 0; i < urls.size(); ++i) {
-                if (url.contains(urls.get(i))) {
+                String[] splitUrls = urls.get(i).split("www.");
+                if (url.contains(splitUrls[splitUrls.length - 1])) {
                     String mainPage = urls.get(i);
                     Site site = new Site();
 
